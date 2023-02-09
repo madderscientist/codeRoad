@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>爆炸棋</title>
+  <script src="./boomchess.js"></script>
+</head>
+
+<body>
+  <p id="sco">计分板</p>
+  <div id="startchoice">
+    玩家数<input type="number" id="player" value="2">
+    宽<input type="number" id="wid" value="5">
+    高<input type="number" id="hei" value="5">
+    <button onclick="startgame()">开始游戏！</button>
+  </div>
+</body>
+<script>
+  ScoreBoard = document.getElementById("sco");
+  var b;  //这是棋盘
+  //按钮
+  var custom = null;
+  var start = null;
+  var outmessage = null;
+  //函数
+  function startgame() {
+    let xx = Number(document.getElementById('wid').value);
+    let yy = Number(document.getElementById('hei').value);
+    if (xx <= 0 || yy <= 0) {
+      alert("行列不能小于零！");
+      return;
+    }
+    let pp = Number(document.getElementById('player').value);
+    if (pp < 1) {
+      alert("没有玩家可不行啊");
+      return;
+    } else if (pp > 5) {
+      alert("玩家太多啦（<6）");
+      return;
+    } else {
+      player = new Array(pp);
+      for (let i = 0; i < pp; i++)
+        player[i] = i + 1;
+    }
+    //创建提示信息
+    outmessage = document.createElement('p');
+    document.body.appendChild(outmessage);
+    outmessage.innerHTML = "轮到player" + (turn + 1) + ":" + colorlist[player[turn]];
+    //创建棋盘
+    var ca = document.createElement('canvas');
+    b = new board(ca, rectangleBoard(xx, yy));
+    document.body.appendChild(ca);
+    ca.addEventListener('click', (e) => {
+      b.putat(e.offsetX, e.offsetY);
+      outmessage.innerHTML = "轮到player" + (turn + 1) + ":" + colorlist[player[turn]];
+      if (start != null && custom != null && b.step > 0) {
+        start.remove();
+        start = null;
+        custom.remove();
+        start = null;
+      }
+    });
+    document.body.removeChild(document.getElementById('startchoice'));
+    b.inidraw();
+    //创建按钮
+    //自定义地图
+    custom = document.createElement('button');
+    custom.innerHTML = "自定义地图";
+    document.body.appendChild(custom);
+    custom.addEventListener('click', (e) => {
+      ScoreBoard.innerHTML = "正在自定义地图，点击灰块可删除";
+      b.step = -1;
+    });
+    //确认修改
+    start = document.createElement('button');
+    start.innerHTML = "确定修改";
+    document.body.appendChild(start);
+    start.addEventListener('click', (e) => {
+      b.step = 0;
+      b.iflegel();
+      b.inidraw();
+    });
+  }
+</script>
+
+</html>
