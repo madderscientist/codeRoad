@@ -1,0 +1,15 @@
+﻿  Board.cpp
+D:\PROGRAM\IDE\Microsoft Visual Studio\2022-Community\VC\Auxiliary\VS\include\graphics.h(1,1): warning C4828: 文件包含在偏移 0x19d3 处开始的字符，该字符在当前源字符集中无效(代码页 936)。
+D:\PROGRAM\C++\BeatYellowDoor\Board.cpp(159,68): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
+D:\PROGRAM\C++\BeatYellowDoor\Board.cpp(159,52): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
+D:\PROGRAM\C++\BeatYellowDoor\Board.cpp(159,32): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
+D:\PROGRAM\C++\BeatYellowDoor\Board.cpp(167,65): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
+D:\PROGRAM\C++\BeatYellowDoor\Board.cpp(167,49): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
+D:\PROGRAM\C++\BeatYellowDoor\Board.cpp(167,29): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
+  GameTree1.cpp
+D:\PROGRAM\IDE\Microsoft Visual Studio\2022-Community\VC\Auxiliary\VS\include\graphics.h(1,1): warning C4828: 文件包含在偏移 0x19d3 处开始的字符，该字符在当前源字符集中无效(代码页 936)。
+D:\PROGRAM\C++\BeatYellowDoor\Timer.h(86,38): warning C4267: “初始化”: 从“size_t”转换到“int”，可能丢失数据
+  main.cpp
+D:\PROGRAM\IDE\Microsoft Visual Studio\2022-Community\VC\Auxiliary\VS\include\graphics.h(1,1): warning C4828: 文件包含在偏移 0x19d3 处开始的字符，该字符在当前源字符集中无效(代码页 936)。
+  正在生成代码...
+  BeatYellowDoor.vcxproj -> D:\PROGRAM\C++\BeatYellowDoor\x64\Debug\BeatYellowDoor.exe
