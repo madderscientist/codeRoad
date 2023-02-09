@@ -9,6 +9,6 @@
 js注释写得很清楚（夸夸自己）。数据结构是稀疏数组（因为可以自定义地图，不一定每个格子都有节点）。每个节点接收到旁边节点传来的信息时做出响应，比如向周围节点传递信息。
 - 使用：html地址前加 http://htmlpreview.github.io/? 即可预览网页内容。请注意爆炸棋玩法（参考视频），多人玩很有趣。
 
-http://htmlpreview.github.io/?https://github.com/madderscientist/codeRoad/tree/main/boomchess/boomchess.html
+http://htmlpreview.github.io/?https://github.com/madderscientist/codeRoad/blob/main/boomchess/boomchess.html
 <br>
 因为异步还会有一些bug，比如一直弹出“游戏结束”，懒得改了。自定义地图若把地图分割成两块不连通的图，很有可能一块里面出现循环，即一直停不下来。但是异步让我们可以落子，也算异步的一个优点了。
