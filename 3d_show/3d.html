@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D展示</title>
+    <script>
+        function reverse2(m) {  //二阶矩阵求逆，克莱默法则
+            let s = m[0][0] * m[1][1] - m[0][1] * m[1][0];
+            return [[m[1][1] / s, -m[0][1] / s], [-m[1][0] / s, m[0][0] / s]];
+        }
+        function multi(a, b) {  //矩阵乘法
+            let result = new Array(a.length);
+            for (let i = 0; i < a.length; i++) {
+                result[i] = new Array(b[0].length);
+                for (let j = 0; j < b[0].length; j++) {
+                    let temp = 0;
+                    for (let k = 0; k < b.length; k++) {
+                        temp += a[i][k] * b[k][j];
+                    }
+                    result[i][j] = temp;
+                }
+            }
+            return result;
+        }
+        function trans(m) {     //转置
+            let result = new Array(m[0].length);
+            for (let j = 0; j < result.length; j++) {
+                result[j] = new Array(m.length);
+                for (let i = 0; i < m.length; i++) {
+                    result[j][i] = m[i][j];
+                }
+            }
+            return result;
+        }
+        var list = [];
+        var twoD_list = [];
+        function twoDlist(x, y) {//传入基底坐标，得到变换后的坐标列表
+            let x1 = [x, y];
+            let x0 = trans(x1);
+            let jidi = multi(x0, reverse2(multi(x1, x0)));
+            twoD_list = multi(list, jidi);
+        }
+    </script>
+</head>
+
+<body>
+    按上下左右控制
+    <button onclick="lockPointer();">全屏</button><br>
+    <canvas id="D" width=420px height=420px></canvas>
+</body>
+<script>
+    var ca = document.getElementById('D');
+    var ctx = ca.getContext("2d");
+
+    var d = 60;             //2D单位长度像素
+    var basex = 210;        //原点x位置
+    var basey = 210;        //原点y位置
+    var a1 = Math.PI / 2;   //旋转角，与x轴夹角
+    var a2 = 0;             //俯角，与z轴夹角
+    var xhat = [0, 1, 0];   //x基底
+    var yhat = [0, 0, 1];   //y基底
+
+    function draw() {
+        ctx.fillStyle = "rgb(255,238,117)";
+        ctx.fillRect(0, 0, ca.width, ca.height);
+        let color = ['red', 'green', 'blue'];
+        ctx.lineWidth = '2';
+        ctx.lineCap = 'square';
+        for (let i = 0; i < twoD_list.length; i++) {
+            ctx.beginPath();
+            ctx.strokeStyle = color[i];
+            ctx.moveTo(basex, basey);
+            ctx.lineTo(ca.width - twoD_list[i][0] * d - basex, ca.height - twoD_list[i][1] * d - basey);
+            ctx.lineTo(ca.width - twoD_list[3][0] * d - basex, ca.height - twoD_list[3][1] * d - basey)
+            ctx.stroke();
+            ctx.closePath();
+        }
+    }
+    function ini() {        //初始化，画坐标系
+        list = [[2, 0, 0], [0, 2, 0], [0, 0, 2], [0.4, 0.4, 0.4]];
+        twoDlist(xhat, yhat);
+        draw();
+    }
+    ini();
+    document.addEventListener("keydown", kd);
+    function refreshxy() {  //根据两个角度算出基底
+        xhat[0] = Math.cos(a1);
+        xhat[1] = Math.sin(a1);
+        let temp = Math.sin(a2);
+        yhat[0] = Math.cos(a1 + Math.PI / 2) * temp;
+        yhat[1] = Math.sin(a1 + Math.PI / 2) * temp;
+        yhat[2] = Math.cos(a2);
+    }
+    function kd(e) {        //keydown事件
+        switch (e.keyCode) {
+            case 37: { a1 -= 0.2; break; }
+            case 38: { a2 -= 0.2; break; }
+            case 39: { a1 += 0.2; break; }
+            case 40: { a2 += 0.2; break; }
+        }
+        refreshxy();
+        twoDlist(xhat, yhat);
+        draw();
+    }
+
+
+
+    var elem;
+    document.addEventListener("mousemove", function (e) {
+        var movementX = e.movementX ||
+            e.mozMovementX ||
+            e.webkitMovementX ||
+            0,
+            movementY = e.movementY ||
+                e.mozMovementY ||
+                e.webkitMovementY ||
+                0;
+
+        a1 -= movementX / 50;
+        a2 -= movementY / 50;
+        refreshxy();
+        twoDlist(xhat, yhat);
+        draw();
+    }, false);
+    function fullscreenChange() {
+        if (document.webkitFullscreenElement === elem ||
+            document.mozFullscreenElement === elem ||
+            document.mozFullScreenElement === elem) { // 较旧的 API 大写 'S'.
+            // 元素进入全屏模式了，现在我们可以请求指针锁定。
+            elem.requestPointerLock = elem.requestPointerLock ||
+                elem.mozRequestPointerLock ||
+                elem.webkitRequestPointerLock;
+            elem.requestPointerLock();
+        }
+    }
+    document.addEventListener('fullscreenchange', fullscreenChange, false);
+    document.addEventListener('mozfullscreenchange', fullscreenChange, false);
+    document.addEventListener('webkitfullscreenchange', fullscreenChange, false);
+    function pointerLockChange() {
+        if (document.mozPointerLockElement === elem ||
+            document.webkitPointerLockElement === elem) {
+            console.log("指针锁定成功了。");
+        } else {
+            console.log("指针锁定已丢失。");
+        }
+    }
+    document.addEventListener('pointerlockchange', pointerLockChange, false);
+    document.addEventListener('mozpointerlockchange', pointerLockChange, false);
+    document.addEventListener('webkitpointerlockchange', pointerLockChange, false);
+    function pointerLockError() {
+        console.log("锁定指针时出错。");
+    }
+    document.addEventListener('pointerlockerror', pointerLockError, false);
+    document.addEventListener('mozpointerlockerror', pointerLockError, false);
+    document.addEventListener('webkitpointerlockerror', pointerLockError, false);
+    function lockPointer() {
+        elem = document.getElementById("D");
+        // 开始于使元素进入全屏模式。目前的实现
+        // 要求元素在请求指针锁定前要处于全屏模式下
+        // -- 这在以后可能会发生改变。
+        elem.requestFullscreen = elem.requestFullscreen ||
+            elem.mozRequestFullscreen ||
+            elem.mozRequestFullScreen || // 较旧的 API 把 ‘S’ 大写
+            elem.webkitRequestFullscreen;
+        elem.requestFullscreen();
+    }
+
+</script>
+
+</html>
