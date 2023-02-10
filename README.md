@@ -8,6 +8,7 @@
 - 黑白棋（人机）
 - 注水问题
 - 加密解密（python联合编程）
+- 矩阵：分数矩阵类
 
 ## html/js项目
 - boomchess：爆炸棋
@@ -15,6 +16,9 @@
 - ANN：神经网络拟合函数
 - Tank：幻影坦克
 - gravity：很简单的重力实现
+- 涩图请求
+- 3d_show：尝试画出三维
+- matrixDet：求大矩阵的行列式
 
 ## python项目
 - Tank：幻影坦克
