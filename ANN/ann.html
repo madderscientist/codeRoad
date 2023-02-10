@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ANN</title>
+</head>
+<style>
+    .funShow{
+        display: flex;
+        justify-content: center;
+        width: 100%;
+        height: 500px;
+        margin: 40px 0px;
+    }
+    #Coordinate{
+        background-color: yellow;
+    }
+    #infun{
+        width: 80%;
+        font-size: 24px;
+    }
+</style>
+<body>
+    鼠标点击黄色区域，将点击坐标送入 ANN神经网络 训练，并画出训练后的图像。按住键盘可以反复用上次点击的点训练。建议一直按住键盘，然后鼠标点击黄色区域
+    <div class="funShow">
+        <canvas id="Coordinate" width="500px" height="500px"></canvas>
+    </div>
+    <input id="infun" type="text" placeholder="自定义函数（自变量是x, js格式）" value="4*(Math.sin(x)+Math.cos(4*x+1))+5">
+    <button onclick="tf = document.getElementById('infun').value">确定</button>
+    <button onclick="train1000()">训练1000次</button>
+    <br><button onclick="drawFunction(targetFun);">画原函数</button>
+</body>
+<script src="./ann.js"></script>
+</html>
