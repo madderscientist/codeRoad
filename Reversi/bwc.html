@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>黑白棋</title>
+</head>
+
+<body>
+    <canvas id="game" width=420px height=420px onclick=bdevent()></canvas>
+    <br>
+    <p id='score'></p>
+    <p id='message'></p>
+    <button id='reg' onclick="regret()">悔棋</button><br>
+    <button id='tip' onclick="main.showWhere()">提示</button>
+    <input type="checkbox" id="autotip" checked="true">自动提示
+    <br>
+    <button id='ng' onclick="newgame()">重来</button>
+</body>
+
+
+<script>
+    var ca = document.getElementById("game");
+    var ctx = ca.getContext("2d");
+    var ba = ca.height;     //边长
+    var Wscore = 2;
+    var Bscore = 2;
+    function drawchessboard() {              //画棋盘
+        ctx.fillStyle = "rgb(255,238,117)";
+        ctx.fillRect(0, 0, ca.width, ca.height);
+        ctx.beginPath();
+        ctx.lineWidth = '2';
+        ctx.strokeStyle = 'black';
+        ctx.lineCap = 'square';
+        for (let i = 1; i < 8; i++) {
+            let dx = ba / 8 * i
+            ctx.moveTo(dx, 0);
+            ctx.lineTo(dx, ba);
+            ctx.moveTo(0, dx);
+            ctx.lineTo(ba, dx);
+        }
+        ctx.stroke();
+    }
+    class chess {
+        constructor(ano) {
+            if (ano != undefined) {
+                this.bd=[[],[],[],[],[],[],[],[]];
+                //复制构造
+                for(let x=0;x<8;x++)
+                    for(let y=0;y<8;y++)
+                        this.bd[x][y]=ano.bd[x][y];
+                this.turn=ano.turn;
+                this.Refresh();
+            }
+            else{
+                //正数黑色，负数白色
+                this.bd = [[0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, -1, 1, 0, 0, 0],
+                [0, 0, 0, 1, -1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0]];
+                this.turn = 4;
+                this.RefreshValues();
+            }
+        }
+        drawone(x, y = -1, state) {
+            if (state == undefined) state = this.turn;
+            else if (state == 0) return;
+            ctx.beginPath();
+            if (state > 0) ctx.fillStyle = 'black';
+            else ctx.fillStyle = 'white';
+            let dx = ba / 8;
+            if (y == -1) {
+                y = Math.floor(x / 8);
+                x = x % 8;
+            }
+            ctx.arc((x + 0.5) * dx, (y + 0.5) * dx, 0.4 * dx, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+        draw() {
+            drawchessboard();
+            for (let y = 0; y < 8; y++)
+                for (let x = 0; x < 8; x++)
+                    this.drawone(x, y, this.bd[y][x]);
+        }
+        is(x, y) {
+            if (this.bd[y][x]) return;
+            let dx = [-1, -1, 0, 1, 1, 1, 0, -1];
+            let dy = [0, -1, -1, -1, 0, 1, 1, 1];
+            let direction = 0;
+            for (let k = 0; k < 8; k++) {
+                let tempx = x + dx[k];
+                let tempy = y + dy[k];
+                let flag = false;
+                while (true) {
+                    if (tempx < 0 || tempy < 0 || tempx > 7 || tempy > 7) {
+                        flag = false;
+                        break;
+                    }
+                    if (this.bd[tempy][tempx] * this.turn < 0) {			//根据步数的正负判断颜色
+                        tempx += dx[k];
+                        tempy += dy[k];
+                        flag = true;
+                    }
+                    else break;
+                }
+                if (flag && this.bd[tempy][tempx]) {
+                    direction |= 1 << k;
+                }
+            }
+            if (direction) {
+                this.wherecan[this.wherecan.length] = [x + y * 8, direction];
+            }
+        }
+        RefreshValues() {
+            this.wherecan = [];
+            for (let y = 0; y < 8; y++)
+                for (let x = 0; x < 8; x++)
+                    this.is(x, y);
+        }
+        ifput(x, y) {
+            for (let i = 0; i < this.wherecan.length; i++) {
+                if (this.wherecan[i][0] == x + y * 8) {
+                    return this.wherecan[i][1];
+                }
+            }
+            return false;
+        }
+        put(x, y, location) {
+            this.bd[y][x] = (this.turn > 0) ? 1 : -1;
+            let dx = [-1, -1, 0, 1, 1, 1, 0, -1];
+            let dy = [0, -1, -1, -1, 0, 1, 1, 1];
+            for (let i = 0; i < 8; i++) {
+                if (location & 1 << i) {
+                    let tempx = x + dx[i];
+                    let tempy = y + dy[i];
+                    while (this.bd[tempy][tempx] * this.turn < 0) {
+                        this.bd[tempy][tempx] *= -1;
+                        tempx += dx[i];
+                        tempy += dy[i];
+                    }
+                }
+            }
+            this.turn = (this.turn < 0) ? 1 - this.turn : -1 - this.turn;
+            return this.Refresh();
+        }
+        Refresh() {              //0结束，1正常，-1交换
+            if (Math.abs(this.turn) == 64) return 0;
+            this.RefreshValues();
+            if (this.wherecan.length) return 1;
+            this.turn *= -1;
+            this.RefreshValues();
+            if (this.wherecan.length) return -1;
+            else return 0;
+        }
+        showWhere() {
+            ctx.beginPath();
+            ctx.fillStyle = 'rgb(157,252,137)';
+            let dx = ba / 8;
+            let x, y;
+            for (let i = 0; i < this.wherecan.length; i++) {
+                y = Math.floor(this.wherecan[i][0] / 8);
+                x = this.wherecan[i][0] % 8;
+                ctx.fillRect((x + 0.15) * dx, (y + 0.15) * dx, dx * 0.7, dx * 0.7);
+            }
+        }
+    };
+    function regret(){
+        delete main;
+        main=new chess(regmain);
+        main.draw();
+    }
+    var main = new chess();
+    var regmain = new chess();
+    main.draw();
+    getscore();
+    function getscore() {
+        Wscore = Bscore = 0;
+        for (let y = 0; y < 8; y++)
+            for (let x = 0; x < 8; x++) {
+                if (main.bd[y][x] < 0) Wscore++;
+                else if (main.bd[y][x] > 0) Bscore++;
+            }
+        document.getElementById('score').innerHTML = '黑：' + Bscore + '<br>白：' + Wscore;
+    }
+    function outmessage(i) {
+        let str;
+        switch (i) {
+            case 0:
+                if (Bscore > Wscore) str = "黑方胜！";
+                else if (Bscore < Wscore) str = "白方胜！";
+                else str = "平局！";
+                document.getElementById('message').innerHTML = "双方都无棋可下，游戏结束\n" + str;
+                break;
+            case 1:
+                if (main.turn > 0) str = '黑棋';
+                else str = '白棋';
+                document.getElementById('message').innerHTML = "轮到" + str;
+                break;
+            case -1:
+                if (main.turn > 0) str = '白方无棋可下，轮到黑方';
+                else str = '黑方无棋可下，轮到白方';
+                document.getElementById('message').innerHTML = str;
+        }
+    }
+    function newgame() {
+        delete main;
+        main = new chess();
+        main.draw();
+        getscore();
+    }
+    function bdevent() {
+        let x = event.pageX - ca.getBoundingClientRect().left;
+        let y = event.pageY - ca.getBoundingClientRect().top;
+        x = Math.floor(8 * x / ba);
+        y = Math.floor(8 * y / ba);
+        let dir = main.ifput(x, y);
+        if (dir) {
+            main.drawone(x, y);
+            delete regmain;
+            regmain=new chess(main);
+            let state = main.put(x, y, dir);
+            setTimeout(() => {
+                main.draw();
+                if (document.getElementById('autotip').checked) {
+                    main.showWhere();
+                }
+            }, 300);
+            getscore();
+            outmessage(state);
+        }
+        else{
+            alert("那里不能下！");
+        }
+    }
+</script>
+
+</html>
