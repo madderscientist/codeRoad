@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计算行列式</title>
+</head>
+
+<body>
+    <textarea id="input" placeholder="输入范例：&#10 1,2&#10 3,4" style="width: 100%;height: 400px;"></textarea>
+    <br>
+    <button onclick="getdet(true);">拉普拉斯法计算行列式</button>
+    <button onclick="getdet(false);">高斯消元法计算行列式</button>
+    <button onclick="NumToMatrix();">根据学号获取23位矩阵</button>
+    <br>
+    <textarea id="out">这个框用来输出高斯消元法之后的矩阵</textarea>
+    <script>
+
+        function getmatrix() {       //从输入框中得到矩阵
+            let t = document.getElementById("input").value;
+            let i = 0, j = 0;               //i管行，j管列
+            let arr = new Array();     //记录整个矩阵
+            let temp = new Array();    //临时记录每行
+            let mode = 1;
+            for (let n = 0; n < t.length; ++n) {
+                if (t[n] == '\n') { arr[i] = temp; ++i; j = 0; temp = new Array(); mode = 1; continue; }
+                if (t[n] == ',' || t[n == '，']) { mode = 0; continue; }
+                else {
+                    if (mode == 0) { j++; mode = 1; }
+                    if (temp[j] == undefined) temp[j] = '';   //申请空间
+                    temp[j] = temp[j] + t[n];
+                }
+            }
+            if (temp.length != 0) arr[i] = temp;          //最后一项
+            return arr;
+        }
+
+        function LaplaceDet(m) {    //拉普拉斯展开
+            let n = m.length;
+            if (n == 2) return m[0][0] * m[1][1] - m[0][1] * m[1][0];
+            let temp = 0;
+            for (let i = 0; i < n; ++i) {       //按第一行展开，以第i个为准
+                let m0 = new Array();
+                //下面获取展开后的矩阵
+                for (let x = 0; x < n - 1; ++x) {   //获取矩阵的行
+                    m0[x] = new Array();     //为m0每一位申请空间
+                    for (let y = 0; y < n - 1; ++y) {//获取每一行的每个元素
+                        if (y < i) m0[x][y] = m[x + 1][y];
+                        else m0[x][y] = m[x + 1][y + 1];  //跳过第i列元素
+                    }
+                }
+                //下面求行列式（递归）
+                let k = (i % 2 == 0) ? 1 : -1;    //注意，i是从0开始的，所以正负号是反着取的
+                temp = temp + k * m[0][i] * LaplaceDet(m0);
+            }
+            return temp;
+        }
+
+        function Gauss(m) {
+            let n = m.length;
+            let i = 1;
+            let pm = 1;
+            let basex = 0;//列
+            let basey = 0;//行
+            while (basex < m[0].length && basey < n) {
+                for (i = basey; i < n; ++i) {
+                    if (m[basey][basex] == 0) { //把（basey，basex）变成非零
+                        let temp = m[basey];
+                        m[basey] = m[i];
+                        m[i] = temp;
+                        pm *= -1;
+                    }
+                    else {                   //以（basey，basex）消元
+                        let x, y, z = m[basey][basex];
+                        for (y = 0; y < n; ++y) {
+                            if (y==basey) continue;
+                            if (m[y][basex] != 0) {
+                                let temp = m[y][basex] / z;
+                                for (x = basex; x < m[y].length; ++x)
+                                    m[y][x] -= m[basey][x] * temp;
+                            }
+                        }
+                        ++basey;
+                        break;
+                    }
+                }
+                ++basex;
+            }
+            document.getElementById("out").value = JSON.stringify(m);
+            return [m, pm];
+        }
+
+        function getdet(method) {
+            let m = getmatrix();
+            let n = m.length;
+            let ifsquare = true;
+            for (let i = 0; i < n; ++i) {
+                if (m[i].length != n) ifsquare = false;
+            }
+            if (ifsquare) {
+                if (method)
+                    alert("行列式为：" + LaplaceDet(m));
+                else {
+                    let aftgau = Gauss(m);
+                    let result = aftgau[1];
+                    for (let i = 0; i < n; i++) result *= aftgau[0][i][i];
+                    alert("行列式为：" + result);
+                }
+            }
+            else alert("请输入方阵！");
+        }
+
+        function NumToMatrix() {
+            let x = prompt("请输入一串数：");
+            let matrix = new Array();
+            let p = 0;        //p控制选择x的数
+            let n = 0;        //n控制matrix里元素个数
+            while (n < 529) {   //取足量的数，再选23*23个放进去
+                let q = Number(x[p % (x.length)]);
+                q = Math.pow(q, Math.ceil((p + 1) / (x.length)));
+                ++p;
+                //把q的每一项放到temp里
+                let temp = new Array();
+                let i = -1;
+                if (q == 0) { temp[++i] = 0; }
+                else {
+                    while (q != 0) {
+                        temp[++i] = q % 10;
+                        q = Math.floor(q / 10);
+                    }
+                }
+                //把temp里的放到matrix里
+                for (; i >= 0; --i, ++n) {
+                    matrix[n] = temp[i];
+                }
+            }
+            let result = '';
+            for (n = 0; n < 23; n++) {     //把matrix的数据变成行列式放到result里面
+                for (p = 0; p < 22; p++) {
+                    result = result + matrix[23 * n + p] + ',';
+                }
+                result = result + matrix[23 * (n + 1) -1] + '\n';
+            }
+            document.getElementById("input").value = result;
+        }
+    </script>
+</body>
+
+</html>
