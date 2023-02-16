@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="头文件">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="WallPaper.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="resource.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="WallPaper.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="NUM\0.bmp" />
+    <Image Include="NUM\1.bmp" />
+    <Image Include="NUM\2.bmp" />
+    <Image Include="NUM\3.bmp" />
+    <Image Include="NUM\4.bmp" />
+    <Image Include="NUM\5.bmp" />
+    <Image Include="NUM\6.bmp" />
+    <Image Include="NUM\7.bmp" />
+    <Image Include="NUM\8.bmp" />
+    <Image Include="NUM\9.bmp" />
+    <Image Include="NUM\p.bmp" />
+    <Image Include="NUM\cruise.ico" />
+  </ItemGroup>
+</Project>
