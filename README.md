@@ -9,6 +9,7 @@
 - 注水问题
 - 加密解密（python联合编程）
 - 矩阵：分数矩阵类
+- Steins_WallPaper（辉光管时钟桌面）
 
 ## html/js项目
 - boomchess：爆炸棋
