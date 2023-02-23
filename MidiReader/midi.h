@@ -147,7 +147,7 @@ void MidiReader::play(int which, bool harmonicaMode){
 		midiOutShortMsg(handle, (p->data->force << 16) + (p->data->note << 8) + 0x90);
 		if (p->next) {
 			int x = p->next->data->at - p->data->at;
-			double y = (double)x / this->tick * this->t / 15000;
+			double y = (double)x / this->tick * this->t / 1000;
 			if (x > 0) {
 				printf("delay:%d\n", (int)y);
 				Sleep((int)y);
