@@ -49,6 +49,7 @@ MidiReader::MidiReader(string midifile){
 		// 分析其中内容
 		unsigned int Time = 0;		// 总时间(tick)
 		unsigned char lastType = 0xC0;	// 上一个midi事件类型
+		unsigned char lastChannel = 0;
 		for(unsigned int k=0; k<Size-5; k++){	// 最后四个是结束符
 			{	// 时间间隔(tick)
 				unsigned int derta = 0;
@@ -72,7 +73,7 @@ MidiReader::MidiReader(string midifile){
 						if(channel == 0xF){
 							switch (Buffer[k++]) {
 							case 0x51:	// 一个四分音符的微秒 没有处理中途变速的情况
-								this->t = (Buffer[++k]<<16) + (Buffer[++k]<<8) + (Buffer[++k]);
+								this->t = (Buffer[k+1]<<16) + (Buffer[k+2]<<8) + (Buffer[k+3]);
 							default:
 								k += Buffer[k];
 								break;
@@ -98,16 +99,18 @@ MidiReader::MidiReader(string midifile){
 						break;
 					default:
 						type = lastType;
+						channel = lastChannel;
 						flag = true;
+						k--;
 						break;
 					}
 				} while (flag);
 				lastType = type;
+				lastChannel = channel;
 			}
 		}
 		delete[]Buffer;
 	}
-
 	fin.close();
 }
 void MidiReader::play(int which, bool harmonicaMode){
