@@ -1,0 +1,4 @@
+m = nn.nn([
+    nn.Dense(28*28+1, 201, nn.Adam(0.0003), nn.relu, nn.drelu, nn.Kaiming),
+    nn.Dense(201, 10, nn.Adam(0.0003), nn.sigmoid, nn.dsigmoid)
+])

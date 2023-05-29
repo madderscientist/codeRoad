@@ -1,0 +1,5 @@
+m = nn.nn([
+    nn.Dense(28*28+1, 200, nn.Adam(0.0003), nn.relu, nn.drelu, nn.Kaiming),
+    nn.Dense(200, 10, nn.Adam(0.0003), nn.relu, nn.drelu, nn.Kaiming),
+])
+训练结果在html文件中。问题在于训练太慢，用了89分钟。应该用批训练
