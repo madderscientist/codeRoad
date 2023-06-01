@@ -1,0 +1,14 @@
+#-----------------------------------------------------------
+# Vivado v2020.1 (64-bit)
+# SW Build 2902540 on Wed May 27 19:54:49 MDT 2020
+# IP Build 2902112 on Wed May 27 22:43:36 MDT 2020
+# Start of session at: Thu Jun  1 21:56:43 2023
+# Process ID: 13524
+# Current directory: D:/PROGRAM/HDL/cpu
+# Command line: vivado.exe -gui_launcher_event rodinguilauncherevent16980 D:\PROGRAM\HDL\cpu\cpu.xpr
+# Log file: D:/PROGRAM/HDL/cpu/vivado.log
+# Journal file: D:/PROGRAM/HDL/cpu\vivado.jou
+#-----------------------------------------------------------
+start_gui
+open_project D:/PROGRAM/HDL/cpu/cpu.xpr
+update_compile_order -fileset sources_1
