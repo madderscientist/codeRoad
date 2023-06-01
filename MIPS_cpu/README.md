@@ -3,6 +3,7 @@
 环境：VIVADO 2020.1
 
 ## 总述
+打开时如果报错，先按下面“更换rom的方法”指定rom和ram的位置！！！！ram在DataMem下！<br>
 基于书上的数据通路增加了多条指令。因为语法不够灵活中途从verilog改为system verilog。是小组作业但我一人2023年5月31日周三写了一天。关于IP的使用参考了这篇[文章](https://comp2008.gitee.io/lab2/mem/)。时钟IP没用到。更多见报告，就是根目录那个pdf。
 
 
