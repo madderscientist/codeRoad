@@ -1,0 +1,24 @@
+#-----------------------------------------------------------
+# Vivado v2020.1 (64-bit)
+# SW Build 2902540 on Wed May 27 19:54:49 MDT 2020
+# IP Build 2902112 on Wed May 27 22:43:36 MDT 2020
+# Start of session at: Fri Jun  2 00:27:57 2023
+# Process ID: 17068
+# Current directory: D:/Desktop/MIPS_cpu
+# Command line: vivado.exe -gui_launcher_event rodinguilauncherevent7740 D:\Desktop\MIPS_cpu\cpu.xpr
+# Log file: D:/Desktop/MIPS_cpu/vivado.log
+# Journal file: D:/Desktop/MIPS_cpu\vivado.jou
+#-----------------------------------------------------------
+start_gui
+open_project D:/Desktop/MIPS_cpu/cpu.xpr
+INFO: [Project 1-313] Project file moved from 'D:/PROGRAM/HDL/cpu' since last save.
+WARNING: [Project 1-312] File not found as 'D:/Desktop/Xilinx-Vivado-IP/simpleCPU/I-format/coe/dmem32.coe'; using path 'D:/PROGRAM/HDL/Xilinx-Vivado-IP/simpleCPU/I-format/coe/dmem32.coe' instead.
+Scanning sources...
+Finished scanning sources
+INFO: [IP_Flow 19-234] Refreshing IP repositories
+INFO: [IP_Flow 19-1704] No user IP repositories specified
+INFO: [IP_Flow 19-2313] Loaded Vivado IP repository 'D:/Vivado/2020.1/data/ip'.
+update_compile_order -fileset sources_1
+reset_project
+exit
+INFO: [Common 17-206] Exiting Vivado at Fri Jun  2 00:29:06 2023...
