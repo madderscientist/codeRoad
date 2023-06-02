@@ -28,3 +28,4 @@
 
 ## 其他
 - HDL_clock：数电实验，用verilog写钟
+- MIPS_cpu：体系结构实验，用verilog写cpu
