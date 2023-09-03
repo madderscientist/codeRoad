@@ -1,0 +1,59 @@
+.Pannel {
+    position: relative;
+    background-color: #8063e1;
+    background-image: linear-gradient(135deg, #bd7be8, #8063e1);
+    width: 18em;
+    height: 9em;
+    display: flex;
+    justify-content: space-around;
+    flex-direction: column;
+}
+.Pannel::before {
+    content: "总览";
+    position: absolute;
+    top: 1em;
+    font-size: 0.5em;
+    color: #8063e1;
+}
+#statusCircle {
+    width: 0.8em;
+    height: 0.8em;
+    border-radius: 50%;
+    background-color: greenyellow;
+    margin: 0 0 0.18em 0;
+}
+#statusPannel {
+    font-size: 1.6em;
+    font-weight: bold;
+}
+/* 每一行 平均分配每一个item*/
+.Pannel .line {
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+}
+.Pannel .line .item .label {
+    color: white;
+    width: 100%;
+    font-size: 1.3em;
+    text-align: right;
+}
+.Pannel .line .item .data {
+    width: 100%;
+    font-size: 0.8em;
+    text-align: right;
+}
+.Pannel button {
+    border: none;
+    height: 2em;
+    border-radius: 0.3em;
+    width: 5em;
+    background-color: rgba(255, 255, 255, 0.6);
+    margin: 0.3em 0 -0.3em 0;
+}
+.Pannel button:hover {
+    background-color: rgba(255, 255, 255, 0.8);
+}
+.Pannel button:active {
+    background-color: rgba(255, 255, 255, 0.4);
+}
