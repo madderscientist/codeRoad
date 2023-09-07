@@ -1,0 +1,31 @@
+html,
+body {
+    background-color: rgb(247, 247, 247);
+    margin: 0;
+    padding: 0;
+    height:100%;
+    overflow: auto;
+}
+button {
+    cursor: pointer;
+    transition: 0.15s;
+}
+.card {
+    margin: 0.6em 1.2em;
+    padding: 1em;
+    border-radius: 1em;
+    box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.15);
+}
+
+#cards {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+#zhanwei {
+    display: block;
+    opacity: 0;
+    width: 100%;
+}
