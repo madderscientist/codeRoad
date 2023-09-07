@@ -29,3 +29,4 @@
 ## 其他
 - HDL_clock：数电实验，用verilog写钟
 - MIPS_cpu：体系结构实验，用verilog写cpu
+- powerClock：数字系统课设，用verilog写更厉害的钟，下载到FPGA上
