@@ -1,0 +1,17 @@
+0.7
+2020.1
+May 27 2020
+20:09:33
+D:/PROGRAM/HDL/powerClock/powerClock.sim/sim_1/behav/xsim/glbl.v,1590624368,verilog,,,,glbl,,,,,,,,
+D:/PROGRAM/HDL/powerClock/powerClock.srcs/sim_1/new/mian_test.sv,1693987209,systemVerilog,,,,main_test,,,,,,,,
+D:/PROGRAM/HDL/powerClock/powerClock.srcs/sources_1/new/calender.sv,1693978589,systemVerilog,,D:/PROGRAM/HDL/powerClock/powerClock.srcs/sources_1/new/counter.sv,,CALENDAR,,,,,,,,
+D:/PROGRAM/HDL/powerClock/powerClock.srcs/sources_1/new/counter.sv,1693978588,systemVerilog,,D:/PROGRAM/HDL/powerClock/powerClock.srcs/sources_1/new/leapYear.sv,,COUNTER;COUNTER_ADJUST;COUNTER_ADJUST_MAX_MIN,,,,,,,,
+D:/PROGRAM/HDL/powerClock/powerClock.srcs/sources_1/new/decoder.sv,1693313131,systemVerilog,,D:/PROGRAM/HDL/powerClock/powerClock.srcs/sources_1/new/tube.sv,,DECODER,,,,,,,,
+D:/PROGRAM/HDL/powerClock/powerClock.srcs/sources_1/new/divider.sv,1693366670,systemVerilog,,D:/PROGRAM/HDL/powerClock/powerClock.srcs/sim_1/new/mian_test.sv,,DIVIDER,,,,,,,,
+D:/PROGRAM/HDL/powerClock/powerClock.srcs/sources_1/new/fsm.sv,1693970057,systemVerilog,,D:/PROGRAM/HDL/powerClock/powerClock.srcs/sim_1/new/mian_test.sv,,FSM,,,,,,,,
+D:/PROGRAM/HDL/powerClock/powerClock.srcs/sources_1/new/hourMode.sv,1693671443,systemVerilog,,D:/PROGRAM/HDL/powerClock/powerClock.srcs/sim_1/new/mian_test.sv,,HOURMODE,,,,,,,,
+D:/PROGRAM/HDL/powerClock/powerClock.srcs/sources_1/new/leapYear.sv,1693366690,systemVerilog,,D:/PROGRAM/HDL/powerClock/powerClock.srcs/sources_1/new/posedgeToPulse.sv,,LEAPYEAR,,,,,,,,
+D:/PROGRAM/HDL/powerClock/powerClock.srcs/sources_1/new/main.sv,1693363327,systemVerilog,,D:/PROGRAM/HDL/powerClock/powerClock.srcs/sources_1/new/tube.sv,,main,,,,,,,,
+D:/PROGRAM/HDL/powerClock/powerClock.srcs/sources_1/new/posedgeToPulse.sv,1693916416,systemVerilog,,D:/PROGRAM/HDL/powerClock/powerClock.srcs/sim_1/new/mian_test.sv,,POSEDGE_TO_PULSE;POSEDGE_TO_PULSE_DELAY;POSEDGE_TO_PULSE_LONG,,,,,,,,
+D:/PROGRAM/HDL/powerClock/powerClock.srcs/sources_1/new/timer.sv,1693549030,systemVerilog,,D:/PROGRAM/HDL/powerClock/powerClock.srcs/sim_1/new/mian_test.sv,,TIMER,,,,,,,,
+D:/PROGRAM/HDL/powerClock/powerClock.srcs/sources_1/new/tube.sv,1693360391,systemVerilog,,D:/PROGRAM/HDL/powerClock/powerClock.srcs/sim_1/new/mian_test.sv,,TUBES,,,,,,,,

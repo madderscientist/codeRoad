@@ -1,0 +1,14 @@
+#-----------------------------------------------------------
+# Webtalk v2020.1 (64-bit)
+# SW Build 2902540 on Wed May 27 19:54:49 MDT 2020
+# IP Build 2902112 on Wed May 27 22:43:36 MDT 2020
+# Start of session at: Sat Sep  2 23:57:46 2023
+# Process ID: 2316
+# Current directory: D:/PROGRAM/HDL/powerClock/powerClock.sim/sim_1/behav/xsim
+# Command line: wbtcv.exe -mode batch -source D:/PROGRAM/HDL/powerClock/powerClock.sim/sim_1/behav/xsim/xsim.dir/main_test_behav/webtalk/xsim_webtalk.tcl -notrace
+# Log file: D:/PROGRAM/HDL/powerClock/powerClock.sim/sim_1/behav/xsim/webtalk.log
+# Journal file: D:/PROGRAM/HDL/powerClock/powerClock.sim/sim_1/behav/xsim\webtalk.jou
+#-----------------------------------------------------------
+source D:/PROGRAM/HDL/powerClock/powerClock.sim/sim_1/behav/xsim/xsim.dir/main_test_behav/webtalk/xsim_webtalk.tcl -notrace
+webtalk_transmit: Time (s): cpu = 00:00:00 ; elapsed = 00:00:11 . Memory (MB): peak = 114.059 ; gain = 17.629
+INFO: [Common 17-206] Exiting Webtalk at Sat Sep  2 23:57:56 2023...
