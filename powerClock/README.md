@@ -13,7 +13,7 @@ VIVADO 2020.1, 用verilog写钟2.0
 （7） 电子表只有六个按键。请只使用六个按键来完成所有功能。
 
 ## 链接
-更多信息详见[设计时笔记](powerClock.srcs\sources_1\new\数字系统设计.md)<br>
+更多信息详见[设计时笔记](./powerClock.srcs/sources_1/new/数字系统设计.md)<br>
 信息学院一群卷怪，想骂人。要不是他们，我也不会加蓝牙模块，写配套APP，加OLED显示。<br>
 APP: 用appinventor2极速开发，[下载](./APK/powerClock.apk)，放入了aia文件供学习
 

@@ -40,5 +40,5 @@ module MONTH(
             default: DATE = 8'b0000_0000;
         endcase
     end
-    assign CARRY = count==MAX;
+    assign CARRY = count!=MAX;
 endmodule

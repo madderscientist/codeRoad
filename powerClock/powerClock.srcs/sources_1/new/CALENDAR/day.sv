@@ -46,7 +46,7 @@ module DAY(
         count <= next;
     end
     B_DECODER bd(count, DATE);
-    assign CARRY = count==MAX;
+    assign CARRY = count!=MAX;
 endmodule
 
 // 5位2进制转2个4位BCD码
