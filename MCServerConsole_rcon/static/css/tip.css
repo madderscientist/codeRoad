@@ -1,0 +1,30 @@
+#tipContainer {
+    position: absolute;
+    margin: auto;
+    top: 0;
+    left: 50%;
+    transform:translate(-50%, 0);
+}
+#tipContainer .tip {
+    width: 13em;
+    margin: 0.6em;
+    padding: 1em;
+    border-radius: 0.8em;
+    text-align: center;
+    color: white;
+    box-shadow: 0 3px 15px 0 rgba(0, 0, 0, 0.3);
+    transition: 0.5s;
+    /* 鼠标点击穿透 */
+    pointer-events: none;
+}
+/* 三个模式 */
+#tipContainer .err{
+    background-color: #f1807e;
+}
+#tipContainer .msg{
+    background-color: lightgreen;
+}
+#tipContainer .warn{
+    background-color: #f2f28d;
+    color: gray;
+}

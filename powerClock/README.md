@@ -13,7 +13,7 @@ VIVADO 2020.1, 用verilog写钟2.0
 （7） 电子表只有六个按键。请只使用六个按键来完成所有功能。
 
 ## 链接
-更多信息详见[设计时笔记](./powerClock.srcs/sources_1/new/数字系统设计.md)<br>
+更多信息详见[设计时笔记](/powerClock/powerClock.srcs/sources_1/new/数字系统设计.md)<br>
 信息学院一群卷怪，想骂人。要不是他们，我也不会加蓝牙模块，写配套APP，加OLED显示。<br>
 APP: 用appinventor2极速开发，[下载](./APK/powerClock.apk)，放入了aia文件供学习
 
@@ -32,7 +32,7 @@ end
 wire signal_pos = ~signal_prev & signal_now;  // 上升沿
 wire signal_neg = signal_prev & ~signal_now;  // 下降沿
 ```
-4. 脉冲产生电路：原理同上，要产生脉冲只要翻转reg即可，注意延迟
+5. 脉冲产生电路：原理同上，要产生脉冲只要翻转reg即可，注意延迟
 ```verilog
 reg pulse_cache, pulse_generator;
 always @(negedge CLK) begin     // 下降沿同步置零脉冲信号
@@ -49,3 +49,6 @@ pulse_generator <= ~pulse_generator;
 
 ## 遗憾
 身边没有VGA的显示器，只有HDMI便携屏。写过VGA输出，但用VGA转HDMI但屏幕不亮。发现我的屏幕分辨率只能1920*1080@60，用PLL倍频改参数还是无济于事。问题可能出在很多地方，比如显示器、转接口、程序。没有VGA屏幕，难以排查问题，故没有继续下去。
+
+<br>
+其他全写报告里面了。见“报告.pdf”

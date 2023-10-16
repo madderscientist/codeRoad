@@ -1,6 +1,6 @@
 Vivado Simulator 2020.1
 Copyright 1986-1999, 2001-2020 Xilinx, Inc. All Rights Reserved.
-Running: D:/Vivado/2020.1/bin/unwrapped/win64.o/xelab.exe -wto 98db55df285e45ccaa591cfe9446ec56 --incr --debug typical --relax --mt 16 -L xil_defaultlib -L unisims_ver -L unimacro_ver -L secureip --snapshot main_test_behav xil_defaultlib.main_test xil_defaultlib.glbl -log elaborate.log 
+Running: D:/Vivado/2020.1/bin/unwrapped/win64.o/xelab.exe -wto 98db55df285e45ccaa591cfe9446ec56 --incr --debug typical --relax --mt 16 -L xil_defaultlib -L unisims_ver -L unimacro_ver -L secureip --snapshot fsm_alarm_test_behav xil_defaultlib.fsm_alarm_test xil_defaultlib.glbl -log elaborate.log 
 Using 16 slave threads.
 Starting static elaboration
 Pass Through NonSizing Optimizer
@@ -8,7 +8,7 @@ Completed static elaboration
 Starting simulation data flow analysis
 Completed simulation data flow analysis
 Time Resolution for simulation is 1ps
-Compiling module xil_defaultlib.UART_TX(Burd_rate=10000000)
-Compiling module xil_defaultlib.main_test
+Compiling module xil_defaultlib.FSM
+Compiling module xil_defaultlib.fsm_alarm_test
 Compiling module xil_defaultlib.glbl
-Built simulation snapshot main_test_behav
+Built simulation snapshot fsm_alarm_test_behav

@@ -1,0 +1,30 @@
+{
+    "http": {
+        "port": "8001"
+    },
+    "paper": {
+        "path": "/home/pi/MCserver",
+        "log": "logs/latest.log",
+        "script_java": "/home/pi/.sdkman/candidates/java/20.0.2-amzn/bin/java",
+        "script_params": ["-jar", "paper-1.20.1-96.jar"],
+        "stdio_encoding": "gb2312",
+        "auto_restart": true,
+        "restart_delay": 10000,
+        "stop_timeout": 60000,
+        "sigint_timeout": 30000
+    },
+    "rcon": {
+        "ip": "127.0.0.1",
+        "port": 25575,
+        "password": "123",
+        "reconn_delay": 20000
+    },
+    "users": {
+        "root": "123456aa"
+    },
+    "files": {
+        "exports": "/home/pi/MCserver/",
+        "max_size": 131072,
+        "history_save": "/home/pi/Programs/papermc-rcon-http/temp/"
+    }
+}

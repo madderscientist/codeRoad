@@ -1,0 +1,69 @@
+.FileSys {
+    width: 90%;
+    height: 25em;
+    display: flex;
+    flex-direction: column;
+}
+
+
+.FileSys .fileHeader {
+    border-bottom: solid 1px rgba(45, 45, 45, 0.5);
+    display: flex;
+    align-items: flex-end;
+}
+#filePath {
+    margin: 0.3em;
+    flex: 1;
+    font-weight: bold;
+}
+
+
+
+#fileList {
+    flex: 1;
+    overflow: auto;
+}
+#fileList li {
+    margin: 0.3em;
+}
+#fileList li:hover {
+    background-color: #fff;
+    cursor: pointer;
+}
+
+/*=== 文件编辑模式 ===*/
+.fileContent {
+    /* 这个类用于选择所有和文件编辑界面相关的元素 */
+    display: none;
+}
+/* 按钮 */
+.fileContent .tool {
+    border: none;
+    border-radius: 5px;
+    padding: 0.4em 1em;
+    margin: 0.3em;
+}
+#fileCancel {
+    background-color: rgb(255, 109, 109);
+}
+#fileSave {
+    background-color: lightgreen;
+}
+
+/* 编辑框 */
+#fileEditor {
+    margin: 0;
+    padding: 0.5em 0.8em;
+    border: none;
+    border-radius: 5px;
+    box-sizing: border-box;
+    width: 100%;
+    flex: 1;
+}
+#fileEditor:hover {
+    border: solid 2px pink;
+}
+#fileEditor:focus {
+    border: solid 2px purple;
+    outline: none;
+}

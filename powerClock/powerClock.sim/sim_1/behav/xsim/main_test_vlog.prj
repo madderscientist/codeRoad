@@ -1,6 +1,7 @@
 # compile verilog/system verilog design source files
 sv xil_defaultlib  \
-"../../../../powerClock.srcs/sources_1/new/usart.sv" \
+"../../../../powerClock.srcs/sources_1/new/counter.sv" \
+"../../../../powerClock.srcs/sources_1/new/divider.sv" \
 "../../../../powerClock.srcs/sim_1/new/mian_test.sv" \
 
 # compile glbl module

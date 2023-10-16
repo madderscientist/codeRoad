@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="./css/general.css">
+    <link rel="stylesheet" href="./css/File.css">
+    <script src="./js/index.js"></script>
+</head>
+<body>
+    <div class="card FileSys">
+        <div class="fileHeader">
+            <div id="filePath">
+                /file
+            </div>
+            <div class="fileContent">
+                <button class="tool" id="fileCancel">取消</button>
+                <button class="tool" id="fileSave">保存</button>
+            </div>
+        </div>
+
+        <div id="fileList">
+            <ul>
+                <li>file1</li>
+                <li>file3</li>
+                <li>file2</li>
+                <li>file2</li>
+                <li>file2</li>
+                <li>file2</li>
+                <li>file2</li>
+                <li>file2</li>
+                <li>file2</li>
+                <li>file2</li>
+                <li>file2</li>
+                <li>file2</li>
+                <li>file2</li>
+                <li>file2</li>
+                <li>file2</li>
+                <li>file2</li>
+                <li>file2</li>
+                <li>file2</li>
+
+            </ul>
+        </div>
+        <textarea id="fileEditor" class="fileContent"></textarea>
+    </div>
+    <button onclick="fileMode(false)"></button>
+    <button onclick="fileMode(true)"></button>
+</body>
+<script>
+    function fileMode(edit){
+        document.getElementById('fileList').style.display = edit ? 'none' : 'block';
+        edit = edit ? 'block' : 'none';
+        let doms = document.getElementsByClassName('fileContent');
+        for(d of doms){
+            d.style.display = edit;
+        }
+    }
+    function updateFileList(ls) {
+        get('http://localhost:8001/hrcon/api/folder', (data)=>{
+            let json = JSON.parse(data);
+            console.log(json);
+        });
+    }
+</script>
+</html>

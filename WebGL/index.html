@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="./gl.js"></script>
+    <script src="./index.js"></script>
+    <script src="./gl-matrix-min.js"></script>
+    <title>WebGL</title>
+</head>
+
+<!-- 
+    有一些内置的变量（写死的不能变的）：
+    gl_PointSize    点渲染模式, 方形点区域渲染像素大小    float
+    gl_Position     顶点位置坐标                        vec4
+    gl_FragColor    片元颜色值                          vec4
+    gl_FragCoord    片元坐标, 单位像素                  vec2
+    gl_PointCoord   点渲染模式对应点像素坐标             vec2
+    sampler2D       从纹理图像提取像素值
+ -->
+<!-- 
+    有一些内置的关键字(类型)
+    attribute  js->顶点着色器         声明顶点数据变量(位置、颜色、法向量，和有关的数据) 一般设置让其自动从缓冲区取值
+    uniform    js->顶点、片元着色器   声明非顶点数据变量（灯光，雾，和阴影贴图相关）
+    varying    顶点着色器->片元着色器         声明需要插值计算的顶点变量
+    定义但是不在main里用，编译的时候会被优化掉，相当于没定义。
+-->
+
+<!-- 顶点着色器 -->
+<!-- 每次渲染一个形状时，顶点着色器会在形状中的每个顶点运行。它的工作是将输入顶点从原始坐标系转换到 WebGL 使用的裁剪空间坐标系，其中每个轴的坐标范围从 -1.0 到 1.0，并且不考虑纵横比，实际尺寸或任何其他因素。
+顶点着色器需要对顶点坐标进行必要的转换，在每个顶点基础上进行其他调整或计算，然后通过将其保存在由 GLSL 提供的特殊变量（我们称为 gl_Position）中来返回变换后的顶点 -->
+<script id="vertexShader" type="x-shader/x-vertex">
+    attribute vec4 a_Position;
+    attribute float a_PointSize;
+
+    void main() {
+        gl_Position = a_Position;
+        gl_PointSize = a_PointSize;
+    }
+</script>
+<!-- 片元着色器 -->
+<!-- 片段着色器在顶点着色器处理完图形的顶点后，会被要绘制的每个图形的每个像素点调用一次。
+它的职责是确定像素的颜色，通过指定应用到像素的纹理元素（也就是图形纹理中的像素），获取纹理元素的颜色，然后将适当的光照应用于颜色。
+之后颜色存储在特殊变量 gl_FragColor 中，返回到 WebGL 层。该颜色将最终绘制到屏幕上图形对应像素的对应位置。 -->
+<script id="fragmentShader" type="x-shader/x-fragment">
+    precision mediump float;
+    uniform vec4 u_FragColor;
+    void main() {
+        gl_FragColor = u_FragColor;
+    }
+</script>
+
+<body>
+    <canvas id="glcanvas" width="800px" height="500px"></canvas>
+</body>
+<script>
+    // 顶点着色器
+    const vsSource = document.getElementById('vertexShader').innerText;
+    // 片元着色器
+    const fsSource = document.getElementById('fragmentShader').innerText;
+    // 画布
+    const canvas = document.getElementById("glcanvas");
+
+    const gl = MyGL.new(canvas);
+    // viewport前两个参数含义：裁剪空间左下角相对于canvas左下角的偏移量，右上为正
+    // gl.viewport(100, 100, canvas.width - 100, canvas.height - 100);
+    gl.iniProgram(vsSource, fsSource);
+    gl.Clear(0, 1, 1);
+    gl.uniform.u_FragColor = [1.0, 1.0, 0.0, 1.0];
+    gl.attribute.a_PointSize = 20;
+
+    // canvas.addEventListener('click', (e) => {
+    //     const position = [2 * e.offsetX / canvas.width - 1, 1 - 2 * e.offsetY / canvas.height];
+    //     gl.attribute.a_Position = position;
+    //     gl.clear(gl.COLOR_BUFFER_BIT);
+    //     gl.drawArrays(gl.POINTS, 0, 1);
+    // });
+
+    // 因为会将数据发送到 GPU，为了省去数据解析，这里使用 Float32Array 直接传送数据
+    const pos = new Float32Array([
+        0, 0.5,
+        0.5, 0,
+        -0.5, -0.5
+    ]);
+    const posV = new Float32Array([
+        0, 0,
+        0, 0,
+        0, 0
+    ]);
+    gl.iniBuffer(gl.attribute.a_Position, 2);
+    function triangle() {
+        // 设置pos的每个元素都有一个变化速度，存储于posV。每次速度都随机变化，范围是[-0.1,0.1]，如果速度超过了[-0.05,0.05]，则速度加上变化量的相反数。如果改变后pos的值超出了[-1,1]则加上改变量的相反数
+        for (let i = 0; i < pos.length; i++) {
+            let d = (Math.random() - 0.5) / 150;
+            if (posV[i]+d>0.05 || posV[i]+d<-0.05) {
+                d = -d;
+            }
+            posV[i] += d;
+            if (pos[i] + posV[i] > 1 || pos[i] + posV[i] < -1) {
+                posV[i] = -posV[i];
+            }
+            pos[i] += posV[i];
+        }
+        // 将js的值复制到GPU缓存
+        gl.bufferData(gl.ARRAY_BUFFER, pos, gl.DYNAMIC_DRAW);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.drawArrays(
+            gl.TRIANGLES,   // 渲染三角形
+            0,              // 从数组中哪个点开始渲染
+            3               // 需要用到多少个点，三角形的三个顶点
+        );
+        requestAnimationFrame(triangle);
+    }
+    triangle();
+</script>
+
+</html>

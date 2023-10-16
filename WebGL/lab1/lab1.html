@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="../gl.js"></script>
+    <script src="./gl_obj.js"></script>
+    <script src="./jumper.js"></script>
+    <title>WebGL Lab1 61821326李睿刚</title>
+</head>
+<style>
+    body {
+        background-color: lightcyan;
+        overflow: hidden;
+    }
+    .zhedie {
+        height: 100px;
+        overflow: auto;
+    }
+</style>
+
+<body>
+    <canvas id="glcanvas" width="1000px" height="500px"></canvas>
+    <div>
+        视角
+        <select name="camera" id="camera">
+            <option value="0">正视角</option>
+            <option value="1">后视角</option>
+            <option value="2">左视角</option>
+            <option value="3">右视角</option>
+            <option value="4">俯视角</option>
+            <option value="5">仰视角</option>
+        </select>
+        姿势
+        <select name="pose" id="pose">
+            <option value="0">站(归位)</option>
+            <option value="1">跑1</option>
+            <option value="2">跑2</option>
+            <option value="3">惊吓</option>
+            <option value="4">伸懒腰</option>
+        </select>
+
+        <div>
+            绕X<input type="range" min="0" max="360" value="180" id="xrot">
+            绕Y<input type="range" min="0" max="360" value="180" id="yrot">
+            绕Z<input type="range" min="0" max="360" value="180" id="zrot">
+        </div>
+    </div>
+
+    <div class="zhedie">
+        <h2>功能介绍：</h2>
+        <p>
+            <b>W：</b>跳 可多段跳 模拟了重力；<b>A：</b>后退；<b>D：</b>前进；<b>S：</b>伸懒腰<br>
+            <b>↑、↓、空格、shift：</b>视野平移<br>
+            <b>三个滑动条：</b>视野旋转<br>
+            <b>点击画布：</b>尾巴旋转<br>
+            <b>鼠标进入画布：</b>头部旋转<br>
+            <b>拖动画面：</b>平移视图<br>
+            <b>滚轮：</b>缩放
+        </p>
+        <h2>特色：</h2>
+        <p>
+            非方形画布、数据结构（尚不完善，屎山代码）
+        </p>
+        未解决：拾取物体。法一是射线拾取，不会。法二是颜色拾取，但是帧缓冲还在摸索
+    </div>
+</body>
+<script>
+    var xrot = document.getElementById('xrot');
+    var yrot = document.getElementById('yrot');
+    var zrot = document.getElementById('zrot');
+    var xrotv = 0;
+    var yrotv = 0;
+    var zrotv = 0;
+    function cameraRotate() {
+        window.GLroot.setCamera(null, GLobj.rotation(xrotv, yrotv, zrotv));
+        window.GLroot.draw();
+    }
+    xrot.oninput = function () {
+        xrotv = (xrot.value - 180) / 180 * Math.PI;
+        cameraRotate();
+    }
+    yrot.oninput = function () {
+        yrotv = (yrot.value - 180) / 180 * Math.PI;
+        cameraRotate();
+    }
+    zrot.oninput = function () {
+        zrotv = (zrot.value - 180) / 180 * Math.PI;
+        cameraRotate();
+    }
+    // 下拉框选择视角
+    document.getElementById('camera').onchange = function () {
+        switch (this.value) {
+            case '0': [xrotv, yrotv, zrotv] = [0, 0, 0]; break;
+            case '1': [xrotv, yrotv, zrotv] = [0, Math.PI, 0]; break;
+            case '2': [xrotv, yrotv, zrotv] = [0, -Math.PI / 2, 0]; break;
+            case '3': [xrotv, yrotv, zrotv] = [0, Math.PI / 2, 0]; break;
+            case '4': [xrotv, yrotv, zrotv] = [-Math.PI / 2, 0, 0]; break;
+            case '5': [xrotv, yrotv, zrotv] = [Math.PI / 2, 0, 0]; break;
+        }
+        // 根据xrotv和yrotv和zrotv更新滑动条
+        xrot.value = (xrotv / Math.PI * 180 + 180).toFixed(0);
+        yrot.value = (yrotv / Math.PI * 180 + 180).toFixed(0);
+        zrot.value = (zrotv / Math.PI * 180 + 180).toFixed(0);
+        cameraRotate();
+    }
+</script>
+<script>
+    var GLroot = new GLobjRoot();
+    const n = (x) => GLroot.normal(x);    // 不能直接写n = GLroot.normal, 否则导致this指向不对
+    var horse = null;
+    const CANVAS = document.getElementById('glcanvas');
+    GLroot.iniGL(CANVAS);
+    GLroot.setCamera(
+        GLobj.transformation(0),
+        GLobj.rotation(0, 0, 0),
+        GLobj.scale(0.5, 0.5, 0.5)
+    );
+    function createHorse() {
+        let body = new GLobj(
+            GLroot.gl,
+            GLobj.translation(0),
+            GLobj.rotation(0),
+            GLmesh.cubetest(),
+            GLobj.scale(n(380), n(165), n(165))
+        );
+        // 尾巴
+        let tail = new GLobj(
+            GLroot.gl,
+            GLobj.translation(n(-200), 0, 0),
+            GLobj.rotation(0, 0, -Math.PI / 6),
+            GLmesh.cube([0.4, 1, 0]),
+            GLobj.scale(n(50), n(150), n(40))
+        );
+        body.addChild('tail', tail);
+        // JJ
+        let JJ = new GLobj(
+            GLroot.gl,
+            GLobj.translation(n(-140), n(-76), 0),
+            GLobj.rotation(0, 0, Math.PI / 3),
+            GLmesh.cube([0, 0, 0]),
+            GLobj.scale(n(20), n(100), n(20))
+        );
+        body.addChild('JJ', JJ);
+        // 腿
+        let leg1 = new GLobj(
+            GLroot.gl,
+            GLobj.translation(n(-157.4), n(-132.4), n(49.9)),
+            GLobj.I,
+            GLmesh.cube([0, 1, 1]),
+            GLobj.scale(n(65), n(230), n(65))
+        );
+        body.addChild('leg1', leg1);
+        let leg2 = new GLobj(
+            GLroot.gl,
+            GLobj.translation(n(-157.4), n(-132.4), n(-49.9)),
+            GLobj.I,
+            GLmesh.cube([0, 1, 1]),
+            GLobj.scale(n(65), n(230), n(65))
+        );
+        body.addChild('leg2', leg2);
+        let leg3 = new GLobj(
+            GLroot.gl,
+            GLobj.translation(n(157.4), n(-132.4), n(49.9)),
+            GLobj.I,
+            GLmesh.cube([0, 1, 1]),
+            GLobj.scale(n(65), n(230), n(65))
+        );
+        body.addChild('leg3', leg3);
+        let leg4 = new GLobj(
+            GLroot.gl,
+            GLobj.translation(n(157.4), n(-132.4), n(-49.9)),
+            GLobj.I,
+            GLmesh.cube([0, 1, 1]),
+            GLobj.scale(n(65), n(230), n(65))
+        );
+        body.addChild('leg4', leg4);
+
+        let neck = new GLobj(
+            GLroot.gl,
+            GLobj.translation(n(200), n(125), 0),
+            GLobj.rotation(0, 0, -Math.PI / 6),
+            GLmesh.cube([0, 1, 1]),
+            GLobj.scale(n(120), n(250), n(65))
+        );
+        body.addChild('neck', neck);
+        let bristle = new GLobj(
+            GLroot.gl,
+            GLobj.translation(n(-75), 0, 0),
+            GLobj.rotation(0),
+            GLmesh.cubetest(),
+            GLobj.scale(n(30), n(250), n(10))
+        );
+        neck.addChild('bristle', bristle);
+
+        let headSet = new GLobj(   // 一个不包含mesh的集合
+            GLroot.gl,
+            GLobj.translation(n(-60), n(125), 0),   // 移动原点
+            GLobj.rotation(0),
+            null
+        );
+        neck.addChild('headSet', headSet);
+        let head = new GLobj(
+            GLroot.gl,
+            GLobj.translation(n(57), n(-42.4), 0),
+            GLobj.rotation(0),
+            GLmesh.cubetest(),
+            GLobj.scale(n(115), n(85), n(75))
+        );
+        headSet.addChild('head', head);
+        let mouse = new GLobj(
+            GLroot.gl,
+            GLobj.translation(n(155), n(-40), 0),
+            GLobj.rotation(0),
+            GLmesh.cubetest(),
+            GLobj.scale(n(80), n(80), n(70))
+        );
+        headSet.addChild('mouse', mouse);
+        let ear_l = new GLobj(
+            GLroot.gl,
+            GLobj.translation(n(12.5), n(15), n(25)),
+            GLobj.rotation(0),
+            GLmesh.cubetest(),
+            GLobj.scale(n(25), n(30), n(15))
+        );
+        headSet.addChild('ear_l', ear_l);
+        let ear_r = new GLobj(
+            GLroot.gl,
+            GLobj.translation(n(12.5), n(15), n(-25)),
+            GLobj.rotation(0),
+            GLmesh.cubetest(),
+            GLobj.scale(n(25), n(30), n(15))
+        );
+        headSet.addChild('ear_r', ear_r);
+        return body;
+    }
+    horse = createHorse();
+    GLroot.addChild('hourse', horse);
+    var rx = 0, ry = 0, rz = 0;
+    function rot() {
+        rx += 0.01;
+        ry += 0.011;
+        rz += 0.012;
+        GLroot.setCamera(null, GLobj.transformation(0, 0, 0, rx, ry, rz));
+        GLroot.draw();
+        requestAnimationFrame(rot);
+    }
+    GLroot.draw();
+    // rot()
+</script>
+<script>
+    horse.stand = function () {  // 必须用function而不是()=>{}，因为this指向
+        this.transform = GLobj.translation(this.transform[3], this.transform[7], this.transform[11]);
+        this.children['leg1'].transform = GLobj.I;
+        this.children['leg2'].transform = GLobj.I;
+        this.children['leg3'].transform = GLobj.I;
+        this.children['leg4'].transform = GLobj.I;
+        this.children['neck'].transform = GLobj.I;
+        this.children['tail'].transform = GLobj.I;
+    }
+    horse.run1 = function () {
+        let [tx, itx] = [GLobj.translation(0, n(115), 0), GLobj.translation(0, n(-115), 0)];
+        let [ro1, ro2] = [MultiMat4(tx, MultiMat4(GLobj.rotation(0, 0, -Math.PI / 4), itx)), MultiMat4(tx, MultiMat4(GLobj.rotation(0, 0, Math.PI / 4), itx))]
+        horse.children['leg1'].transform = ro1;
+        horse.children['leg2'].transform = ro2;
+        horse.children['leg3'].transform = ro2;
+        horse.children['leg4'].transform = ro1;
+    }
+    horse.run2 = function () {
+        let [tx, itx] = [GLobj.translation(0, n(115), 0), GLobj.translation(0, n(-115), 0)];
+        let [ro1, ro2] = [MultiMat4(tx, MultiMat4(GLobj.rotation(0, 0, -Math.PI / 4), itx)), MultiMat4(tx, MultiMat4(GLobj.rotation(0, 0, Math.PI / 4), itx))]
+        horse.children['leg1'].transform = ro2;
+        horse.children['leg2'].transform = ro1;
+        horse.children['leg3'].transform = ro1;
+        horse.children['leg4'].transform = ro2;
+    }
+    horse.rest = function () { // 伸懒腰
+        horse.transformation(GLobj.rotation(0, 0, -Math.PI / 15));
+        let [tx, itx] = [GLobj.translation(0, n(115), 0), GLobj.translation(0, n(-115), 0)];
+        let legt = MultiMat4(tx, MultiMat4(GLobj.rotation(0, 0, Math.PI / 7), itx))
+        horse.children['leg1'].transform = legt;
+        horse.children['leg2'].transform = legt;
+        horse.children['leg3'].transform = MultiMat4(tx, MultiMat4(GLobj.rotation(0, 0, Math.PI / 3), itx));
+        horse.children['leg4'].transform = MultiMat4(tx, MultiMat4(GLobj.rotation(0, 0, Math.PI / 3), itx));
+        horse.children['neck'].transform = MultiMat4(GLobj.translation(0, n(-125), 0), MultiMat4(GLobj.rotation(0, 0, Math.PI / 4), GLobj.translation(0, n(125), 0)));
+        horse.children['tail'].transform = MultiMat4(GLobj.translation(n(-25), n(75), 0), MultiMat4(GLobj.rotation(0, 0, -Math.PI / 6), GLobj.translation(n(25), n(-75), 0)));
+    }
+    // 下拉框选择姿势
+    document.getElementById('pose').onchange = function () {
+        switch (this.value) {
+            case '0':   // 站(归位)
+                horse.stand(); break;
+            case '1':
+                horse.run1(); break;
+            case '2':
+                horse.run2(); break;
+            case '3': { // 惊吓
+                horse.transformation(GLobj.rotation(0, 0, Math.PI / 4));
+                let [tx, itx] = [GLobj.translation(0, n(115), 0), GLobj.translation(0, n(-115), 0)];
+                let legt = MultiMat4(tx, MultiMat4(GLobj.rotation(0, 0, -Math.PI / 4), itx))
+                horse.children['leg1'].transform = legt;
+                horse.children['leg2'].transform = legt;
+                horse.children['leg3'].transform = MultiMat4(tx, MultiMat4(GLobj.rotation(0, 0, Math.PI / 3), itx));
+                horse.children['leg4'].transform = MultiMat4(tx, MultiMat4(GLobj.rotation(0, 0, Math.PI / 6), itx));
+                horse.children['neck'].transform = MultiMat4(GLobj.translation(0, n(-125), 0), MultiMat4(GLobj.rotation(0, 0, -Math.PI / 6), GLobj.translation(0, n(125), 0)));
+                horse.children['tail'].transform = MultiMat4(GLobj.translation(n(-25), n(75), 0), MultiMat4(GLobj.rotation(0, 0, -Math.PI / 2), GLobj.translation(n(25), n(-75), 0)));
+                break;
+            }
+            case '4':
+                horse.rest(); break;
+        }
+        // 根据xrotv和yrotv和zrotv更新滑动条
+        xrot.value = (xrotv / Math.PI * 180 + 180).toFixed(0);
+        yrot.value = (yrotv / Math.PI * 180 + 180).toFixed(0);
+        zrot.value = (zrotv / Math.PI * 180 + 180).toFixed(0);
+        window.GLroot.draw();
+    }
+</script>
+<script>
+    var dx = 0;
+    var dy = 0;
+    var dz = 0;
+    var D = 12;
+    window.addEventListener('keydown', (e) => {
+        switch (e.keyCode) {
+            case 32: dy += D; break;   // 空格
+            case 16: dy -= D; break;   // shift
+            case 38: dz += D; break;   // 上
+            case 40: dz -= D; break;   // 下
+            case 37: dx -= D; break;   // 左
+            case 39: dx += D; break;   // 右
+            default: return;
+        }
+        window.GLroot.setCamera(GLobj.translation(n(dx), n(dy), n(dz)));
+        window.GLroot.draw();
+    });
+    // 角色运动
+    horse.state = 0;
+    horse.updateState = function () {
+        this.state = (this.state + 1) % 4;
+        switch (this.state) {
+            case 0: this.stand(); break;
+            case 1: this.run1(); break;
+            case 2: this.stand(); break;
+            case 3: this.run2(); break;
+        }
+    }
+    horse.jumper = new Jumper(0);
+    window.addEventListener('keydown', (e) => {
+        switch (e.keyCode) {
+            case 87:  // w 跳跃
+                horse.jumper.jump(5, (y) => {
+                    horse.transformation(GLobj.transformation(0, y, 0));
+                    window.GLroot.draw();
+                }, true);
+                return;
+            case 65: horse.transformation(GLobj.translation(-0.1, 0, 0)); horse.updateState(); break; // a
+            case 83: horse.rest(); break; // s
+            case 68: horse.transformation(GLobj.translation(+0.1, 0, 0)); horse.updateState(); break; // d
+            default: return;
+        }
+        window.GLroot.draw();
+    })
+    var x = 0;
+    CANVAS.onclick = (e) => {
+        x += 0.2;
+        horse.children['tail'].transform = MultiMat4(GLobj.translation(n(-25), n(75), 0), MultiMat4(GLobj.rotation(0, 0, -x), GLobj.translation(n(25), n(-75), 0)))
+        GLroot.draw();
+    }
+</script>
+<script>
+    var mouseDown = false;
+    var lastMouseDown = [0, 0];
+    CANVAS.onmousedown = (e) => {
+        mouseDown = true; lastMouseDown = [e.offsetX, e.offsetY];
+    }
+    CANVAS.onmouseup = (e) => {
+        mouseDown = false;
+        dx = dx + e.offsetX - lastMouseDown[0];
+        dy = dy + lastMouseDown[1] - e.offsetY;
+    }
+    CANVAS.addEventListener('mousemove', (e) => {
+        if (mouseDown) {     // 此处处理过于简单了
+            window.GLroot.setCamera(GLobj.translation(
+                n(dx + e.offsetX - lastMouseDown[0]),
+                n(dy + lastMouseDown[1] - e.offsetY),
+                n(dz)
+            ));
+        } else {
+            // 根据鼠标在画布中的位置确定一个角度
+            let [x, y] = [e.offsetX, e.offsetY];
+            let [cx, cy] = [e.target.width / 2, e.target.height / 2];
+            let theta = Math.atan2(y - cy, x - cx);
+            horse.children['neck'].transform = MultiMat4(GLobj.translation(0, n(-125), 0), MultiMat4(GLobj.rotation(0, 0, -theta - 1), GLobj.translation(0, n(125), 0)));
+        }
+        window.GLroot.draw();
+    });
+    CANVAS.addEventListener('mouseleave', (e) => {    // 恢复头部
+        horse.children['neck'].transform = GLobj.I;
+        GLroot.draw();
+    });
+
+    var scalex = 1;
+    var scaley = 1;
+    var scalez = 1;
+    CANVAS.addEventListener('mousewheel', (e)=>{
+        let x = event.wheelDelta>0 ? 1.25:0.8;
+        scalex*=x;
+        scaley*=x;
+        scalez*=x;
+        window.GLroot.setCamera(null, null, GLobj.scale(scalex, scaley, scalez));
+        window.GLroot.draw();
+    })
+</script>
+
+</html>

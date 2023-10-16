@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>服务器状态查询</title>
+    <link rel="stylesheet" href="./css/general.css">
+    <link rel="stylesheet" href="./css/Pannel.css">
+    <link rel="stylesheet" href="./css/Console.css">
+    <link rel="stylesheet" href="./css/Hardware.css">
+    <link rel="stylesheet" href="./css/Players.css">
+    <link rel="stylesheet" href="./css/tip.css">
+    <link rel="stylesheet" href="./css/File.css">
+    <script src="./js/ui.js"></script>
+    <script src="./js/index.js"></script>
+</head>
+
+<body>
+    <!-- 上半 -->
+    <div id="cards">
+        <div class="card Pannel">
+            <div class="line">
+                <div class="item">
+                    <div id="statusCircle" style="display: inline-block;"></div>
+                    <div id="statusPannel" style="display: inline-block;">Running</div>
+                </div>
+            </div>
+            <div class="line">
+                <div class="item">
+                    <div class="label">CPU</div>
+                    <div class="data" id="cpuPannel">100%</div>
+                </div>
+                <div class="item">
+                    <div class="label">MEM</div>
+                    <div class="data" id="memPannel">100%</div>
+                </div>
+                <div class="item">
+                    <div class="label">PING</div>
+                    <div class="data" id="pingPannel">100ms</div>
+                </div>
+                <div class="item">
+                    <div class="label">🤷‍♀️</div>
+                    <div class="data" id="playerPannel">3</div>
+                </div>
+            </div>
+            <div class="line">
+                <button id="startBtn">启动</button>
+                <button id="stopBtn">关闭</button>
+                <button id="restartBtn">重启</button>
+            </div>
+        </div>
+
+        <div class="card Hardware">
+            <div class="x">
+                <div class="barContainer">
+                    <div id="cpuBar" class="Bar">
+                        <div class="label">CPU</div>
+                    </div>
+                </div>
+            </div>
+            <div class="x">
+                <div class="barContainer">
+                    <div id="memBar" class="Bar">
+                        <div class="label">MEM</div>
+                        <div id="mem_detail">1245/2096MB</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card Players">
+            <div id="playerlist"></div>
+        </div>
+        
+        <div class="card FileSys">
+        
+        </div>
+
+        <div id="zhanwei"></div>
+    </div>
+    <!-- 下半控制台 -->
+    <div id="console">
+        <div id="separateBar" draggable="true"></div>
+        <div class="commandflex">
+            <div id="shellContainer">
+                <div id="shell"></div>
+            </div>
+            <div class="typeIn">
+                <div>></div>
+                <input type="text" id="commands" placeholder="回车发送">
+                <button id="sendCommants">⇑</button>
+            </div>
+        </div>
+    </div>
+    <!-- 中心弹窗 -->
+    <div id="tipContainer"></div>
+</body>
+<script>
+    // 实际使用
+    // var rcon = new RCON();      // 用var以通过window.rcon访问此变量
+</script>
+
+</html>
