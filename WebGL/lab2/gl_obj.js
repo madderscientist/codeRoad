@@ -11,118 +11,13 @@ function MultiMat4(a, b) {
     }
     return out;
 }
-
-class GLmesh {
-    static idColors = [0];
-    static cubetest() {     // 彩色渐变立方体
-        const v = [
-            // 前面
-            [-0.5, -0.5, 0.5, 1, 0, 0],
-            [0.5, -0.5, 0.5, 1, 1, 0],
-            [0.5, 0.5, 0.5, 0, 1, 0],
-            [-0.5, 0.5, 0.5, 0, 1, 1],
-            // 后面
-            [-0.5, -0.5, -0.5, 0, 0, 1],
-            [0.5, -0.5, -0.5, 1, 0, 1],
-            [0.5, 0.5, -0.5, 1, 0, 0],
-            [-0.5, 0.5, -0.5, 1, 1, 0]
-        ];
-        const i = new Uint8Array([
-            0, 1, 2, 0, 2, 3,   // 前
-            4, 5, 6, 4, 6, 7,   // 后
-            0, 4, 7, 0, 7, 3,   // 左
-            1, 5, 6, 1, 6, 2,   // 右
-            3, 2, 6, 3, 6, 7,   // 上
-            0, 1, 5, 0, 5, 4,   // 下
-        ]);
-        return new GLmesh(v, i);
-    }
-    static cube(color = [1, 0, 0], vertix = null, indice = null) {
-        const v = vertix || [     // 顶点坐标，颜色
-            // 前面
-            [-0.5, -0.5, 0.5, ...color],
-            [0.5, -0.5, 0.5, ...color],
-            [0.5, 0.5, 0.5, ...color],
-            [-0.5, 0.5, 0.5, ...color],
-            // 后面
-            [-0.5, -0.5, -0.5, ...color],
-            [0.5, -0.5, -0.5, ...color],
-            [0.5, 0.5, -0.5, ...color],
-            [-0.5, 0.5, -0.5, ...color]
-        ];
-        const i = indice || new Uint8Array([
-            0, 1, 2, 0, 2, 3,   // 前
-            4, 5, 6, 4, 6, 7,   // 后
-            0, 4, 7, 0, 7, 3,   // 左
-            1, 5, 6, 1, 6, 2,   // 右
-            3, 2, 6, 3, 6, 7,   // 上
-            0, 1, 5, 0, 5, 4,   // 下
-        ]);
-        return new GLmesh(v, i);
-    }
-    static triangle(color = [1, 0, 0]) {
-        const v = [
-            [-0.5, -0.5, 0, ...color],
-            [0.5, -0.5, 0, ...color],
-            [0, 0.5, 0, ...color]
-        ];
-        const i = new Uint8Array([0, 1, 2]);
-        return new GLmesh(v, i);
-    }
-    static uniqueColor(addin = false) {     // 是否添加入列表
-        let tryID = GLmesh.idColors.length;
-        let count = 0;
-        while (tryID in GLmesh.idColors && count < (1 << 24)) {
-            tryID = tryID == (1 << 24) ? 1 : tryID + 1;
-            count++;
-        }
-        if (count == (1 << 24)) return 0;
-        else {
-            if (addin) GLmesh.idColors.push(tryID);
-            return tryID;
-        }
-    }
-    static IDtoCOLOR(idColor) {
-        const r = (idColor >> 16) & 0xff;
-        const g = (idColor >> 8) & 0xff;
-        const b = idColor & 0xff;
-        return new Float32Array([r / 255, g / 255, b / 255]);
-    }
-    static COLORtoID(color) {
-        const r = Math.round(color[0] * 255);
-        const g = Math.round(color[1] * 255);
-        const b = Math.round(color[2] * 255);
-        return (r << 16) + (g << 8) + b;
-    }
-
-    constructor(vertix = [], triangle = [], colorid = null) {
-        // 二维数组
-        // 按照一个顶点：x,y,z,r,g,b的方式排布
-        this.vertix = vertix;
-        this.triangle = triangle;
-        // 在识别点击的时候的特异性颜色 颜色用8位表示法
-        this.colorid = colorid || GLmesh.uniqueColor(true);
-    }
-    meshArray() {
-        return [new Float32Array(this.vertix.flat()), this.triangle];
-    }
-    vertixArray() {
-        return new Float32Array(this.vertix.map(v => v.slice(0, 3)).flat());
-    }
-    colorArray() {
-        return new Float32Array(this.vertix.map(v => v.slice(3, 6)).flat());
-    }
-    bind(v, c) {
-        // 将v和c合并为this.vertix的格式
-        let vertix = [];
-        for (let i = 0; i < v.length; i += 3) {
-            vertix.push([...v.slice(i, i + 3), ...c.slice(i, i + 3)]);
-        }
-        this.vertix = vertix;
-    }
-    idColorArray() {
-        return GLmesh.IDtoCOLOR(this.colorid);
-    }
+// 叉乘
+function Cross(a, b) {
+    return new Float32Array([
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0]
+    ]);
 }
 
 class GLobj {
@@ -176,6 +71,7 @@ class GLobj {
             0, 0, 0, 1
         ]);
     }
+
     static I = new Float32Array([
         1, 0, 0, 0,
         0, 1, 0, 0,
@@ -200,7 +96,7 @@ class GLobj {
     }
     draw(transform) {
         const g = this.gl;
-        // 计算变换矩阵
+        // 计算变换矩阵 transform * displacement * rotation * transform * scale
         // 位移。是左乘
         let t = MultiMat4(transform, this.displacement);
         // 旋转。是右乘
@@ -213,11 +109,19 @@ class GLobj {
         // t = MultiMat4(t, this.displacement);
 
         if (this.mesh) {     // 如果是null则不画，表示为一个坐标转换
-            g.uniform.translation = MultiMat4(t, this.scale);   // 缩放。需要先作用在原物体，所以右乘
-            const [v, i] = this.mesh.meshArray();
-            g.bufferData(g.ARRAY_BUFFER, v, g.DYNAMIC_DRAW);
-            g.bufferData(g.ELEMENT_ARRAY_BUFFER, i, g.DYNAMIC_DRAW);
-            g.drawElements(g.TRIANGLES, i.length, g.UNSIGNED_BYTE, 0);
+            if(!this.mesh.mesh) this.mesh.mesh = this.mesh.meshArray();
+            let tempT = MultiMat4(t, this.scale);   // 缩放。需要先作用在原物体，所以右乘
+            g.uniform.translation = tempT;
+            if (this.mesh instanceof GLmesh_E) {    // 用drawElements
+                const [v, i] = this.mesh.mesh;
+                g.bufferData(g.ARRAY_BUFFER, v, g.DYNAMIC_DRAW);
+                g.bufferData(g.ELEMENT_ARRAY_BUFFER, i, g.DYNAMIC_DRAW);
+                g.drawElements(g.TRIANGLES, i.length, g.UNSIGNED_BYTE, 0);
+            } else {    // 用用drawArrays
+                const v = this.mesh.mesh;
+                g.bufferData(g.ARRAY_BUFFER, v, g.DYNAMIC_DRAW);
+                g.drawArrays(g.TRIANGLES, 0, v.length / 6);
+            }
         }
         // 画子物体
         for (let name in this.children) {
@@ -252,6 +156,7 @@ class GLobjRoot {
         // 用专用的着色器
         gl.useProg(this.iniDraw(gl, viewDistance));
     }
+    // translation*camera_displace 即位移右乘。效果是每个子物体都在各自的坐标系移动，而各自坐标系方向不同，所以移动的方向不同
     iniDraw(gl, viewDistance) {
         const vsSource = `
             attribute vec4 a_Position;
@@ -273,6 +178,7 @@ class GLobjRoot {
         const fsSource = `
             precision mediump float;
             varying vec4 v_Color;
+
 
             void main() {
                 gl_FragColor = v_Color;
@@ -320,5 +226,71 @@ class GLobjRoot {
     }
     normal(x) {
         return 2 * x / this.canvasLen;
+    }
+}
+
+class VirtualTrackingBall {
+    constructor(canvas) {
+        this.canvas = canvas;
+    }
+    // 由屏幕的(X,Y)映射到球面坐标(X,Y,Z)
+    MapToSphere(point) {
+        let x = 2 * point[0] / this.canvas.width - 1;
+        let y = 1 - 2 * point[1] / this.canvas.height;
+        let z = 0;
+        let length = x * x + y * y;
+        if (length > 1) {
+            let norm = 1 / Math.sqrt(length);
+            x *= norm;
+            y *= norm;
+        } else {
+            z = Math.sqrt(1 - length);
+        }
+        return new Float32Array([x, y, z]);
+    }
+
+    static trackBallRot(last, current) {
+        // 叉乘得到旋转轴，其模为sin(angle)
+        let axis = Cross(last, current);
+        // angle 约等于 sin(angle)
+        let angle = Math.sqrt(axis[0] * axis[0] + axis[1] * axis[1] + axis[2] * axis[2]);
+        // 计算旋转矩阵
+        axis = [axis[0]/angle, axis[1]/angle, axis[2]/angle];
+        const d = Math.sqrt(axis[1] * axis[1] + axis[2] * axis[2]);
+        // 先将axis旋转到z轴
+        const Rx = new Float32Array([
+            1, 0, 0, 0,
+            0, axis[2]/d, -axis[1]/d, 0,
+            0, axis[1]/d, axis[2]/d, 0,
+            0, 0, 0, 1
+        ]);
+        const Ry = new Float32Array([
+            d, 0, -axis[0], 0,
+            0, 1, 0, 0,
+            axis[0], 0, d, 0,
+            0, 0, 0, 1
+        ]);
+        // 以上两个矩阵的逆
+        const Ry_ = new Float32Array([
+            d, 0, axis[0], 0,
+            0, 1, 0, 0,
+            -axis[0], 0, d, 0,
+            0, 0, 0, 1
+        ]);
+        const Rx_ = new Float32Array([
+            1, 0, 0, 0,
+            0, axis[2]/d, axis[1]/d, 0,
+            0, -axis[1]/d, axis[2]/d, 0,
+            0, 0, 0, 1
+        ]);
+        const sin = angle, cos = Math.sqrt(1 - sin * sin);
+        // 绕z旋转。注意这里对角度进行了取反，相当于旋转矩阵的逆，即摄像机反向运动
+        let Rz = new Float32Array([
+            cos, sin, 0, 0,
+            -sin, cos, 0, 0,
+            0, 0, 1, 0,
+            0, 0, 0, 1
+        ]);
+        return MultiMat4(Rx_, MultiMat4(Ry_, MultiMat4(Rz, MultiMat4(Ry, Rx))));
     }
 }

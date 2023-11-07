@@ -1,4 +1,4 @@
-class MyGL extends (WebGL2RenderingContext || WebGLRenderingContext) {
+class MyGL extends (WebGL2RenderingContext || WebGLRenderingContext) {  // 如果Webgl2用不了，下面的uniform赋值会报错
     // WebGLRenderingContext虽然是函数但不能作为函数用，所以不能从构造函数访问
     static new(canvas) {
         let gl = (
@@ -60,7 +60,7 @@ class MyGL extends (WebGL2RenderingContext || WebGLRenderingContext) {
                 if (!(key in target))
                     target[key] = this.getUniformLocation(this.program, key);
                 return target[key];
-                // return this.getUniform(this.program, target[key]);   // 和attribute保持一致，故不用这种。而且uniform的幅值方式有很多
+                // return this.getUniform(this.program, target[key]);   // 和attribute保持一致，故不用这种。而且uniform的赋值方式有很多
             },
             set: (target, key, value) => {
                 if (!(key in target))
@@ -71,7 +71,7 @@ class MyGL extends (WebGL2RenderingContext || WebGLRenderingContext) {
                         case 1: this.uniform1fv(target[key], value); break;
                         case 2: this.uniform2fv(target[key], value); break;
                         case 3: this.uniform3fv(target[key], value); break;
-                        // 除了2*2矩阵不能用，其他都可以用一位数组传参
+                        // 除了2*2矩阵不能用，其他都可以用一维数组传参
                         case 9: this.uniformMatrix3fv(target[key], true, value); break;
                         case 16: this.uniformMatrix4fv(target[key], true, value); break;
                         default: this.uniform4fv(target[key], value);
@@ -80,7 +80,7 @@ class MyGL extends (WebGL2RenderingContext || WebGLRenderingContext) {
                 function d2(value) {
                     value = new Float32Array(value.flat());
                     switch (value.length) {
-                        // 如果用用超过长度的会将没涉及的置零
+                        // 如果用超过长度的会将没涉及的置零
                         // 只有Webgl2可以用转置true
                         case 4: this.uniformMatrix2fv(target[key], true, value); break;
                         case 9: this.uniformMatrix3fv(target[key], true, value); break;

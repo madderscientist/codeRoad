@@ -11,7 +11,7 @@
 </head>
 <style>
     body {
-        background-color: lightcyan;
+        background-color: red;
         overflow: hidden;
     }
     .zhedie {
@@ -310,10 +310,6 @@
             case '4':
                 horse.rest(); break;
         }
-        // 根据xrotv和yrotv和zrotv更新滑动条
-        xrot.value = (xrotv / Math.PI * 180 + 180).toFixed(0);
-        yrot.value = (yrotv / Math.PI * 180 + 180).toFixed(0);
-        zrot.value = (zrotv / Math.PI * 180 + 180).toFixed(0);
         window.GLroot.draw();
     }
 </script>
@@ -362,14 +358,15 @@
         }
         window.GLroot.draw();
     })
-    var x = 0;
+    var tail_rot = 0;
     CANVAS.onclick = (e) => {
-        x += 0.2;
-        horse.children['tail'].transform = MultiMat4(GLobj.translation(n(-25), n(75), 0), MultiMat4(GLobj.rotation(0, 0, -x), GLobj.translation(n(25), n(-75), 0)))
+        tail_rot += 0.2;
+        horse.children['tail'].transform = MultiMat4(GLobj.translation(n(-25), n(75), 0), MultiMat4(GLobj.rotation(0, 0, -tail_rot), GLobj.translation(n(25), n(-75), 0)))
         GLroot.draw();
     }
 </script>
 <script>
+    // 画布的鼠标事件
     var mouseDown = false;
     var lastMouseDown = [0, 0];
     CANVAS.onmousedown = (e) => {
@@ -401,6 +398,7 @@
         GLroot.draw();
     });
 
+    // 滚轮缩放
     var scalex = 1;
     var scaley = 1;
     var scalez = 1;

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="../gl.js"></script>
+    <script src="./gl_obj.js"></script>
+    <script src="./mesh.js"></script>
+</head>
+<style>
+    body {
+        background-color: lightgreen;
+        overflow: hidden;
+        display: flex;
+    }
+</style>
+<script>
+    function fstream(files) {
+        let reader = new FileReader();
+        try {
+            reader.readAsArrayBuffer(files);
+            reader.onload = function () {
+                let stl = GLmesh_A.STL(new Uint8Array(this.result));
+                let name = files.name.slice(0, -4);
+                let body = new GLobj(
+                    GLroot.gl,
+                    GLobj.translation(0),
+                    GLobj.rotation(0),
+                    stl,
+                    GLobj.scale(n(600), n(600), n(600))
+                );
+                GLroot.addChild(name, body);
+                GLroot.draw();
+            }
+        }
+        catch (err) {
+            alert('not a stl file!');
+        }
+    }
+</script>
+
+<body>
+    <canvas id="glcanvas" width="1000px" height="500px"></canvas>
+    <div>
+        <ul>
+            <li>鼠标中键->绕屏幕中心的旋转。按shift以绕x、y轴</li>
+            <li>鼠标右键->在屏幕内平移。按shift以沿x、y轴</li>
+            <li>鼠标滚轮->缩放</li>
+        </ul>
+        <input type="file" id="stl" accept=".stl" onchange="fstream(this.files[0]);">
+    </div>
+</body>
+
+<script>
+    var GLroot = new GLobjRoot();
+    const n = (x) => GLroot.normal(x);    // 不能直接写n = GLroot.normal, 否则导致this指向不对
+    const CANVAS = document.getElementById('glcanvas');
+    GLroot.iniGL(CANVAS,30);
+    GLroot.setCamera(
+        GLobj.transformation(0),
+        GLobj.rotation(0, 0, 0),
+        GLobj.scale(0.5, 0.5, 0.5)
+    );
+</script>
+
+<script>
+    // 鼠标操作！
+    let scalex = 0.5;
+    CANVAS.addEventListener('mousewheel', (e) => {
+        let x = event.wheelDelta > 0 ? 1.25 : 0.8;
+        scalex *= x;
+        window.GLroot.setCamera(null, null, GLobj.scale(scalex, scalex, scalex));
+        window.GLroot.draw();
+    });
+
+
+    let tb = new VirtualTrackingBall(CANVAS);
+    let camera_r = GLobj.I;
+    // CANVAS取消右键菜单
+    CANVAS.oncontextmenu = function (e) {
+        e.preventDefault();
+    }
+
+    let lastClick = null;
+    CANVAS.addEventListener('mousedown', (e) => {
+        lastClick = [e.offsetX, e.offsetY];
+    })
+    CANVAS.addEventListener('mousemove', (e) => {
+        if (e.buttons == 0) return;
+
+        let movementX = e.movementX;
+        let movementY = e.movementY;
+        if (e.shiftKey) {
+            if (Math.abs(e.offsetX - lastClick[0]) > Math.abs(e.offsetY - lastClick[1])) {
+                movementY = 0;
+            } else {
+                movementX = 0;
+            }
+        }
+        if (movementX == 0 && movementY == 0) return;
+
+        if (e.buttons == 1) {    // 左键 绕Z轴旋转
+            // 叉乘算sin和方向
+            let x1 = [e.offsetX - CANVAS.width/2, e.offsetY - CANVAS.height/2, 0];
+            let x2 = [e.offsetX - e.movementX - CANVAS.width/2, e.offsetY - e.movementY - CANVAS.height/2, 0];
+            let n = Cross(x1, x2);
+            let sin = n[0]**2 + n[1]**2 + n[2]**2;
+            n = n[2]<0 ? -1.11 : 1.11;  // 补偿一下
+            sin = Math.sqrt(sin / (x1[0]**2+x1[1]**2) / (x2[0]**2+x2[1]**2));
+            camera_r = MultiMat4(GLobj.rotation(0,0,n*sin), camera_r);  // sina近似为a
+        }
+        if (e.buttons == 2) {   // 右键平移
+            let t = GLobj.translation(n(movementX * 1.5 / scalex), n(-movementY * 1.5 / scalex), 0);
+            camera_r = MultiMat4(t, camera_r);
+        }
+        if (e.buttons == 4) {   // 中键旋转
+            let c = tb.MapToSphere([e.offsetX, e.offsetY]);
+            let l = tb.MapToSphere([e.offsetX - movementX / scalex, e.offsetY - movementY / scalex]);
+            let rr = VirtualTrackingBall.trackBallRot(l, c);
+            camera_r = MultiMat4(rr, camera_r);
+        }
+        window.GLroot.setCamera(null, camera_r, null);
+        window.GLroot.draw();
+    });
+</script>
+</html>
