@@ -50,7 +50,7 @@ class MyGL extends (WebGL2RenderingContext || WebGLRenderingContext) {  // 如�
                 } else if (typeof value == 'number') {
                     this.vertexAttrib1f(target[key], value);
                 }
-                else throw new Error("value not an Array!");
+                else throw new Error("value not an Array or Number!");
                 return true;
             }
         });
@@ -92,13 +92,19 @@ class MyGL extends (WebGL2RenderingContext || WebGLRenderingContext) {  // 如�
                     d1.call(this, value);
                 } else if (Array.isArray(value)) {
                     if (Array.isArray(value[0])) {  // 矩阵
-                        d2.call(this, new Float32Array(value.flat()));
+                        d2.call(this, value);
                     } else {
                         d1.call(this, new Float32Array(value));
                     }
                 } else if (typeof value == 'number') {
-                    this.uniform1f(target[key], value);
-                } else throw new Error("value not an Array!");
+                    this.uniform1f(target[key], value); // 如果是数字，只能传浮点数
+                } else if(typeof value == 'string') {
+                    // 判断字符串能不能转为数字
+                    if (isNaN(value)) throw new Error("value not a Number!");
+                    // 判断是整数还是小数
+                    if (value.indexOf('.') == -1) this.uniform1i(target[key], parseInt(value));
+                    else this.uniform1f(target[key], parseFloat(value));
+                } else throw new Error("value not an Array or Number!");
                 return true;
             }
         });
@@ -111,6 +117,11 @@ class MyGL extends (WebGL2RenderingContext || WebGLRenderingContext) {  // 如�
         this.shaderSource(shader, source);
         //编译着色器对象，使其成为二进制数据
         this.compileShader(shader);
+        let success = this.getShaderParameter(shader, this.COMPILE_STATUS);
+        if (!success) {
+            // 编译失败，打印错误信息
+            console.error(this.getShaderInfoLog(shader));
+        }
         return shader;
     }
 
@@ -144,8 +155,9 @@ class MyGL extends (WebGL2RenderingContext || WebGLRenderingContext) {  // 如�
     }
 
     iniBuffer(loc, size) {
+        let b = this.createBuffer();
         // createBuffer在GPU创建了缓存，而bindBuffer说明这块缓冲区用于gl.ARRAY_BUFFER。后续对 gl.ARRAY_BUFFER 的操作都会映射到这个缓存
-        this.bindBuffer(this.ARRAY_BUFFER, this.createBuffer());
+        this.bindBuffer(this.ARRAY_BUFFER, b);
         // 告诉 OpenGL 如何从 Buffer 中获取数据
         this.vertexAttribPointer(
             loc,            // 顶点属性的索引
@@ -157,6 +169,7 @@ class MyGL extends (WebGL2RenderingContext || WebGLRenderingContext) {  // 如�
         );
         // 开启 attribute 变量，使顶点着色器能够访问缓冲区数据
         this.enableVertexAttribArray(loc);
+        return b;
     }
 
     useProg(program) {

@@ -33,9 +33,11 @@
 <script id="vertexShader" type="x-shader/x-vertex">
     attribute vec4 a_Position;
     attribute float a_PointSize;
+    uniform vec4 test[10];
+    //uniform vec4 single;
 
     void main() {
-        gl_Position = a_Position;
+        gl_Position = a_Position+test[0]+test[1];
         gl_PointSize = a_PointSize;
     }
 </script>
@@ -46,6 +48,7 @@
 <script id="fragmentShader" type="x-shader/x-fragment">
     precision mediump float;
     uniform vec4 u_FragColor;
+
     void main() {
         gl_FragColor = u_FragColor;
     }
@@ -65,10 +68,12 @@
     const gl = MyGL.new(canvas);
     // viewport前两个参数含义：裁剪空间左下角相对于canvas左下角的偏移量，右上为正
     // gl.viewport(100, 100, canvas.width - 100, canvas.height - 100);
-    gl.iniProgram(vsSource, fsSource);
+    gl.useProg(gl.iniProgram(vsSource, fsSource));
     gl.Clear(0, 1, 1);
     gl.uniform.u_FragColor = [1.0, 1.0, 0.0, 1.0];
-    gl.attribute.a_PointSize = 20;
+    gl.uniform['test[0]'] = [0,0,0,0];
+    gl.uniform['test[1]'] = [0,0,0,0];
+    // gl.attribute.a_PointSize = 20;
 
     // canvas.addEventListener('click', (e) => {
     //     const position = [2 * e.offsetX / canvas.width - 1, 1 - 2 * e.offsetY / canvas.height];
@@ -112,7 +117,7 @@
         );
         requestAnimationFrame(triangle);
     }
-    triangle();
+    // triangle();
 </script>
 
 </html>
