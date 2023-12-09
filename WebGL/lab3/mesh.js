@@ -70,7 +70,7 @@ class GLmesh {  // 主要实现了特异性颜色的提取 和lab2相比，去�
         // 在识别点击的时候的特异性颜色 颜色用8位表示法
         this.colorid = colorid || GLmesh.uniqueColor(true);
     }
-    static cube(gl) {
+    static cube(gl, inverse = false) {  // 是否法线翻转
         const v = [
             -0.5, -0.5, 0.5,
             0.5, -0.5, 0.5,
@@ -99,6 +99,9 @@ class GLmesh {  // 主要实现了特异性颜色的提取 和lab2相比，去�
             1, 1, -1,
             -1, 1, -1
         ];
+        if(inverse) {
+            for(let i = 0; i<n.length; i++) n[i] = -n[i];
+        }
         return new GLmesh(gl, v, i, n);
     }
     static cubetest(gl) {     // 彩色渐变立方体

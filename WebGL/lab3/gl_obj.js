@@ -271,7 +271,7 @@ class GLobjRoot {
     }
     addChild(name, child) {
         this.children[name] = child;
-        return this;    // 为了能连续addChild
+        return child;
     }
     /**
      * 像素到米的单位转换
@@ -295,8 +295,12 @@ class GLobjRoot {
     }
 }
 
-// 点光源类
 class Pointolite {
+    /**
+     * 定义一个全向点光源
+     * @param {Array} color 四维向量，rgba，值大于零即可，越大越亮。透明度用于和mesh定义的颜色混合
+     * @param {*} position 三维向量，xyz，世界坐标
+     */
     constructor(color, position) {
         this.color = new Float32Array([color[0], color[1], color[2]]);
         this.position = new Float32Array([position[0], position[1], position[2]]);

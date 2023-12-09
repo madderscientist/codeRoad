@@ -45,7 +45,7 @@
         GLobj.translation(5, 0.5, 0),
         GLobj.rotation(0),
         GLmesh.cube(GLroot.gl),
-        new GLmaterial(0.03, 0.4, -1, 50, [0.1, 0.6, 0.3, 1]),
+        new GLmaterial(0.05, 0.4, -1, 50, [0.1, 0.6, 0.3, 1]),
         GLobj.scale(1, 1, 1)
     ));
     GLroot.addChild('gnd', new GLobj(
@@ -57,21 +57,22 @@
         GLobj.scale(100, 0.01, 100)
     ));
     // 添加光源 绑定一个物体
-    GLroot.addLight(new Pointolite([1, 1, 1], [0, 10, 0]));
-    GLroot.addChild('bulb', new GLobj(
-        GLroot.gl,
-        GLobj.translation(0, 10, 0),
-        GLobj.rotation(0),
-        GLmesh.cube(GLroot.gl),
-        new GLmaterial(0.05, 1, -1, 5, [1, 1, 1, 1]),
-        GLobj.scale(0.2, 0.2, 0.2)
-    ));
-
+    const lightObj = {
+        light: GLroot.addLight(new Pointolite([1, 1, 1], [0, 10, 0])),
+        obj: GLroot.addChild('bulb', new GLobj(
+            GLroot.gl,
+            GLobj.translation(0, 10, 0),
+            GLobj.rotation(0),
+            GLmesh.cube(GLroot.gl, true),   // 设置法向翻转，这样就可以被里面的光源照亮了
+            new GLmaterial(0.01, 1, 0, 10, [1, 1, 1, 1]),  // 漫反射不能不设，不然黑的
+            GLobj.scale(0.2, 0.2, 0.2)
+        ))
+    };
     // 支持多个点光源
-    GLroot.addLight(new Pointolite([1, 1, 1], [10, 10, 0]));
-    GLroot.addLight(new Pointolite([1, 1, 1], [-10, 10, 0]));
-    GLroot.addLight(new Pointolite([1, 1, 1], [0, 10, 10]));
-    GLroot.addLight(new Pointolite([1, 1, 1], [0, 10, -10]));
+    GLroot.addLight(new Pointolite([0.9, 0.9, 0.9], [10, 10, 0]));
+    GLroot.addLight(new Pointolite([0.9, 0.9, 0.9], [-10, 10, 0]));
+    GLroot.addLight(new Pointolite([0.9, 0.9, 0.9], [0, 10, 10]));
+    GLroot.addLight(new Pointolite([0.9, 0.9, 0.9], [0, 10, -10]));
 </script>
 <script>
     // 按键系统 如果仅仅用keydown，长按时会导致按键延迟，而且不能处理多按键
@@ -90,12 +91,11 @@
             let mult = 0.04;
             const n = normalVec3([camera._n[0], 0, camera._n[2]]);
             const t = normalVec3(Cross(n, camera.up));
+            let rgb = [0, 0, 0];
+            let rgbinverse = 1;
             for (let keyCode of this.keys) {
                 switch (keyCode) {
-                    // case 38: ay -= D; break;   // 上
-                    // case 40: ay += D; break;   // 下
-                    // case 37: ax += D; break;   // 左
-                    // case 39: ax -= D; break;   // 右
+                    // 相机移动
                     case 87: move[0] += n[0]; move[2] += n[2]; break;   // w
                     case 83: move[0] -= n[0]; move[2] -= n[2]; break;   // s
                     case 65: move[0] += t[0]; move[2] += t[2]; break;   // a
@@ -103,9 +103,31 @@
                     case 32: move[1]++; break;   // 空格
                     case 16: move[1]--; break;   // shift
                     case 17: mult *= 2.5; break;   // ctrl
+                    // 光源移动
+                    case 38: lightObj.light.position[2] -= 0.1; break;   // 上
+                    case 40: lightObj.light.position[2] += 0.1; break;   // 下
+                    case 37: lightObj.light.position[0] += 0.1; break;   // 左
+                    case 39: lightObj.light.position[0] -= 0.1; break;   // 右
+                    case 33: lightObj.light.position[1] += 0.1; break;   // pageup
+                    case 34: lightObj.light.position[1] -= 0.1; break;   // pagedown
+                    // 光源参数变化
+                    case 18: rgbinverse = -1; break; // alt
+                    case 82: rgb[0] += 0.02; break; // r
+                    case 71: rgb[1] += 0.02; break; // g
+                    case 66: rgb[2] += 0.02; break; // b
                 }
             }
-            camera.move(move, mult);
+            camera.move(move, mult);    // 视角移动
+            // 改变光源颜色
+            lightObj.light.color[0] = Math.min(1.5, Math.max(0, lightObj.light.color[0]+rgb[0]*rgbinverse));
+            lightObj.light.color[1] = Math.min(1.5, Math.max(0, lightObj.light.color[1]+rgb[1]*rgbinverse));
+            lightObj.light.color[2] = Math.min(1.5, Math.max(0, lightObj.light.color[2]+rgb[2]*rgbinverse));
+            // 移动光源与绑定物 暂时没有好的办法
+            lightObj.obj.displacement = GLobj.translation(
+                lightObj.light.position[0],
+                lightObj.light.position[1],
+                lightObj.light.position[2]
+            ); GLroot.updateLight(lightObj.light.id);
         }
     }
     // 渲染器
@@ -178,7 +200,7 @@
     function lockPointer(e) {
         if (e.button == 0) CANVAS.requestFullscreen();
     }
-    document.oncontextmenu = function (e) {
+    document.oncontextmenu = function (e) { // 右键选择stl文件
         var inputFile = document.createElement('input');
         inputFile.type = 'file';
         inputFile.addEventListener('change', function (event) {
@@ -187,16 +209,24 @@
             try {
                 reader.readAsArrayBuffer(file);
                 reader.onload = function () {
-                    let name = file.name.slice(0, -4);
                     let body = new GLobj(
                         GLroot.gl,
                         GLobj.translation(0, 1.9, -1),
-                        GLobj.rotation(-Math.PI/2),
+                        GLobj.rotation(-Math.PI / 2),
                         GLmesh.STL(GLroot.gl, new Uint8Array(this.result)),
                         new GLmaterial(0.4, 0.8, -1, 600, [0.3, 0.3, 0.3, 1]),
                         GLobj.scale(1.1, 1.1, 1.1)
                     );
-                    GLroot.addChild(name, body);
+                    let name = file.name.slice(0, -4);
+                    if(name in GLroot.children) {
+                        let i = -1;
+                        let newName;
+                        do{
+                            i += 1;
+                            newName = name + i;
+                        } while(newName in GLroot.children);
+                        name = newName;
+                    } GLroot.addChild(name, body);
                     GLroot.draw();
                 }
             }
