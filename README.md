@@ -20,6 +20,7 @@
 - 涩图请求
 - 3d_show：尝试画出三维
 - matrixDet：求大矩阵的行列式
+- WebGL：计算机图形学实验
 
 ## python项目
 - Tank：幻影坦克
