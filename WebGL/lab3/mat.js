@@ -44,6 +44,12 @@ function normalVec3(x) {
     let nx = absVec3(x);
     return new Float32Array([x[0]/nx, x[1]/nx, x[2]/nx]);
 }
+// 在原有向量上进行归一化
+function normalVec3_change(x) {
+    let nx = absVec3(x);
+    x[0] /= nx; x[1] /= nx; x[2] /= nx;
+    return x;
+}
 function MultiVec4(M, V) {
     return [
         M[0] * V[0] + M[1] * V[1] + M[2] * V[2] + M[3] * V[3],
@@ -52,6 +58,54 @@ function MultiVec4(M, V) {
         M[12] * V[0] + M[13] * V[1] + M[14] * V[2] + M[15] * V[3]
     ];
 }
+
+/**
+ * 给定三个点计算归一化后的法向量 点的顺序按右手法则
+ * @param {Array} a 
+ * @param {Array} b 
+ * @param {Array} c 
+ * @returns {Float32Array} 单位法向量
+ */
+function faceNormal(a, b, c) {
+    let ab = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+    let ac = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+    return normalVec3_change(Cross(ab, ac));
+}
+
+/**
+ * 给定vertex index 数组，计算出 normal 数组
+ * @param {Arrya} vertex 顶点数组 每个点占3个元素 x y z
+ * @param {Array} index 顶点索引数组 每个三个元素为一个三角形
+ * @returns {Array} 法向数组
+ */
+function facesNormal(vertex, index) {
+    const normal = new Float32Array(vertex.length);
+    for (let i = 0; i < index.length; i += 3) {
+        let a = index[i] * 3;
+        let b = index[i + 1] * 3;
+        let c = index[i + 2] * 3;
+        let n = faceNormal(
+            [vertex[a], vertex[a + 1], vertex[a + 2]],
+            [vertex[b], vertex[b + 1], vertex[b + 2]],
+            [vertex[c], vertex[c + 1], vertex[c + 2]]
+        );
+        normal[a] += n[0];
+        normal[a + 1] += n[1];
+        normal[a + 2] += n[2];
+        normal[b] += n[0];
+        normal[b + 1] += n[1];
+        normal[b + 2] += n[2];
+        normal[c] += n[0];
+        normal[c + 1] += n[1];
+        normal[c + 2] += n[2];
+    }
+    for (let i = 0; i < normal.length; i += 3) {
+        let l = normal[i]*normal[i] + normal[i + 1]*normal[i + 1] + normal[i + 2]*normal[i + 2];
+        normal[i] /= l; normal[i + 1] /= l; normal[i + 2] /= l;
+    }
+    return normal;
+}
+
 function inverseMat4(M) {
     let m00 = M[0], m01 = M[1], m02 = M[2], m03 = M[3];
     let m10 = M[4], m11 = M[5], m12 = M[6], m13 = M[7];

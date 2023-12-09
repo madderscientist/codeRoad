@@ -17,8 +17,8 @@ class GLcamera {
         let n = [at[0] - x, at[1] - y, at[2] - z];    // 法向量
         if (!(n[0] || n[1] || n[2])) n = [0, 0, 1];
         else n = normalVec3(n);
-        let v = normalVec3(Cross(up, n));   // 另一个向量
-        let u = normalVec3(Cross(n, v));    // 向上的向量
+        let v = normalVec3_change(Cross(up, n));   // 另一个向量
+        let u = normalVec3_change(Cross(n, v));    // 向上的向量
         return new Float32Array([
             v[0], v[1], v[2], -x * v[0] - y * v[1] - z * v[2],
             u[0], u[1], u[2], -x * u[0] - y * u[1] - z * u[2],
@@ -58,7 +58,7 @@ class GLcamera {
         return this._n;
     }
     set n(N) {
-        this._n.set(normalVec3([N[0] || this._n[0], N[1] || this._n[1], N[2] || this._n[2]]));
+        this._n.set(normalVec3_change([N[0] || this._n[0], N[1] || this._n[1], N[2] || this._n[2]]));
         // 根据this.n更新this._a
         this._a[0] = Math.atan2(-this._n[2], this._n[0]);
         this._a[1] = Math.asin(this._n[1]);
@@ -94,8 +94,8 @@ class GLcamera {
      * @returns {Float32Array} 相机位姿矩阵
      */
     postureMat() {
-        let v = normalVec3(Cross(this.up, this._n));   // 另一个向量
-        let u = normalVec3(Cross(this._n, v));    // 向上的向量
+        let v = normalVec3_change(Cross(this.up, this._n));   // 另一个向量
+        let u = normalVec3_change(Cross(this._n, v));    // 向上的向量
         // 焦点的位置
         // let [x,y,z] = this.position;    // 人眼习惯转轴在眼睛后面
         let [x, y, z] = [this.position[0] - this.n[0] * this.f, this.position[1] - this.n[1] * this.f, this.position[2] - this.n[2] * this.f];

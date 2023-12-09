@@ -4,6 +4,7 @@ B、 交互式的视点变化，实现场景漫游
 C、 实现光照效果，光源位置绑定在移动物体上，参数可调    —— 和要求A合并
 D、 场景中至少包含两种以上的材质    —— 和要求A合并
 
+[预览](http://htmlpreview.github.io/?https://github.com/madderscientist/codeRoad/blob/main/WebGL/lab3/lab3.html)
 使用方法：
 - 没有进入全屏模式时，右击可以选一个模型放置，可以选“安柏.stl”。默认陶瓷质感。
 - 左击进入全屏后，wasd移动，空格shift上下，ctrl可以加速，滚轮修改视窗大小，体现为能看到多少东西、视角大小、所见物体大小。

@@ -13,7 +13,8 @@
 </head>
 <style>
     body {
-        background-color: lightgreen;
+        background-image: url('https://ts1.cn.mm.bing.net/th/id/R-C.a8c2c6ecb1594034148afe48501969af?rik=kl%2faEKSWEisiBg&riu=http%3a%2f%2fpic.ntimg.cn%2ffile%2f20171126%2f17961491_224119026000_2.jpg&ehk=IXIHBqq8EMLw%2fcvBcTqg2q8BrM3kkZakF855pqCOc1U%3d&risl=&pid=ImgRaw&r=0');
+        background-size: cover;
         overflow: hidden;
         margin: 0;
         padding: 0;
@@ -46,6 +47,14 @@
         GLobj.rotation(0),
         GLmesh.cube(GLroot.gl),
         new GLmaterial(0.05, 0.4, -1, 50, [0.1, 0.6, 0.3, 1]),
+        GLobj.scale(1, 1, 1)
+    ));
+    GLroot.addChild('obj3', new GLobj(
+        GLroot.gl,
+        GLobj.translation(0, 1, 5),
+        GLobj.rotation(0),
+        GLmesh.sphere(GLroot.gl, 18),
+        new GLmaterial(0.08, 0.2, -1, 100, [0.7, 0.2, 0.5, 1]),
         GLobj.scale(1, 1, 1)
     ));
     GLroot.addChild('gnd', new GLobj(
@@ -89,8 +98,8 @@
         action() {
             let move = [0, 0, 0];
             let mult = 0.04;
-            const n = normalVec3([camera._n[0], 0, camera._n[2]]);
-            const t = normalVec3(Cross(n, camera.up));
+            const n = normalVec3_change([camera._n[0], 0, camera._n[2]]);
+            const t = normalVec3_change(Cross(n, camera.up));
             let rgb = [0, 0, 0];
             let rgbinverse = 1;
             for (let keyCode of this.keys) {

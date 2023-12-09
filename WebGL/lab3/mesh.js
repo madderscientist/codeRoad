@@ -50,13 +50,13 @@ class GLmesh {  // 主要实现了特异性颜色的提取 和lab2相比，去�
         this.vertexBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertex), gl.STATIC_DRAW);
-        // 创建法向缓冲区
-        // todo: 自动计算法向
+        // 创建法向缓冲区 如果不传则自动按右手法则计算
+        if (!normal || !normal.length) normal = facesNormal(vertex, index);  // 需要mat.js
         this.normalBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.normalBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normal), gl.STATIC_DRAW);
         // 创建颜色缓冲区(如果有颜色的话)
-        if (color) this.addColor(gl, color);
+        if (color && color.length) this.addColor(gl, color);
         else this.colorBuffer = null;
         // 创建索引缓冲区
         this.indexBuffer = gl.createBuffer();
@@ -99,8 +99,8 @@ class GLmesh {  // 主要实现了特异性颜色的提取 和lab2相比，去�
             1, 1, -1,
             -1, 1, -1
         ];
-        if(inverse) {
-            for(let i = 0; i<n.length; i++) n[i] = -n[i];
+        if (inverse) {
+            for (let i = 0; i < n.length; i++) n[i] = -n[i];
         }
         return new GLmesh(gl, v, i, n);
     }
@@ -111,6 +111,47 @@ class GLmesh {  // 主要实现了特异性颜色的提取 和lab2相比，去�
             0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0
         ]));
         return c;
+    }
+    /**
+     * 球体的网格
+     * @param {WebGL2RenderingContext} gl 
+     * @param {Number} subdivision 180度内的细分次数 最后赤道上为2*subdivision边形
+     */
+    static sphere(gl, subdivision = 18) {
+        let da = Math.PI / subdivision;
+        let subdivision2 = subdivision << 1;
+        let pointNum = (subdivision - 1) * subdivision2 + 2;
+        const vertex = new Float32Array(pointNum * 3);
+        vertex.set([0, 1, 0, 0, -1, 0], vertex.length - 6);    // 顶点和底点
+        for (let i = 0, thetai = 0, n = 0; i < subdivision2; i++, thetai += da) {   // 经度
+            for (let j = 1, thetaj = da; j < subdivision; j++, thetaj += da) {    // 纬度
+                let sin = Math.sin(thetaj);
+                vertex[n++] = sin * Math.cos(thetai);
+                vertex[n++] = Math.cos(thetaj);
+                vertex[n++] = sin * Math.sin(thetai);
+            }
+        }
+        da = subdivision - 1;
+        const index = new Float32Array(3 * da * subdivision2 << 1);
+        let top = pointNum - 2, buttom = pointNum - 1;
+        for (let i = 0, n = 0; i < subdivision2; i++) {
+            let nexti = (i + 1) % subdivision2;
+            let lastPoint = top;
+            let lastPoint2 = buttom;
+            for (let j = 0, k = da - 1; j < da; j++, k--) { // 特意把两个循环合并了，加快速度
+                index[n] = j + i * da;
+                index[n + 1] = lastPoint;
+                index[n + 2] = j + nexti * da;
+                lastPoint = index[n];
+                index[n + 3] = lastPoint2;
+                index[n + 4] = k + i * da;
+                index[n + 5] = k + nexti * da;
+                lastPoint2 = index[n + 5];
+                n += 6;
+            }
+        }
+        console.log(index);
+        return new GLmesh(gl, vertex, index);
     }
     static STL(gl, data) {
         return new GLmesh(gl, ...GLmesh.fromSTL(data));
