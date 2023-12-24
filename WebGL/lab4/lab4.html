@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>点击以全屏</title>
+    <script src="./mat.js"></script>
+    <script src="../gl.js"></script>
+    <script src="./parseObj.js"></script>
+    <script src="./gl_obj.js"></script>
+    <script src="../lab3/camera.js"></script>
+    <script src="./mesh.js"></script>
+</head>
+<script>
+    async function loadImg(url) {
+        let img = new Image();
+        return new Promise((resolve, reject) => {
+            img.onload = () => resolve(img);
+            img.onerror = () => reject(url);
+            img.src = url;
+        });
+    }
+</script>
+<style>
+    body {
+        background-size: cover;
+        overflow: hidden;
+        margin: 0;
+        padding: 0;
+    }
+</style>
+
+<body>
+    <canvas id="glcanvas" width="1000px" height="500px"></canvas>
+</body>
+<script>
+    var GLroot = new GLobjRoot();
+    const n = (x) => GLroot.normal(x);    // 不能直接写n = GLroot.normal, 否则导致this指向不对
+    const CANVAS = document.getElementById('glcanvas');
+    GLroot.iniGL(CANVAS, 2000);
+    const camera = GLroot.camera;
+</script>
+<script>
+    // 添加物品
+    GLroot.addChild('obj', new GLobj(
+        GLroot.gl,
+        GLobj.translation(0, 1, -1),
+        GLobj.rotation(0),
+        GLmesh.cubetest(GLroot.gl),
+        new GLmaterial(0.1, 1, -1, 100, [1, 1, 1, 0.2]),
+        GLobj.scale(1, 2, 1)
+    ));
+    GLroot.addChild('obj2', new GLobj(
+        GLroot.gl,
+        GLobj.translation(5, 0.5, 0),
+        GLobj.rotation(0),
+        GLmesh.cube(GLroot.gl),
+        new GLmaterial(0.05, 0.4, -1, 50, [0.1, 0.6, 0.3, 1]),
+        GLobj.scale(1, 1, 1)
+    ));
+    GLroot.addChild('obj3', new GLobj(
+        GLroot.gl,
+        GLobj.translation(0, 1, 5),
+        GLobj.rotation(0),
+        GLmesh.sphere(GLroot.gl, 18),
+        new GLmaterial(0.08, 0.2, -1, 100, [0.7, 0.2, 0.5, 1]),
+        GLobj.scale(1, 1, 1)
+    ));
+    GLroot.addChild('gnd', new GLobj(
+        GLroot.gl,
+        GLobj.translation(0, -0.005, 0),
+        GLobj.rotation(0),
+        GLmesh.cube(GLroot.gl),
+        new GLmaterial(0.01, 0.2, -1, 5, [0.3, 0.3, 0.3, 1]),
+        GLobj.scale(100, 0.01, 100)
+    ));
+    GLobj.fromObj(GLroot.gl, 'http://127.0.0.1:5500/lab4/安柏.obj').then(o=>{
+        GLroot.addChild('安柏', o);
+    });
+    loadImg('http://127.0.0.1:5500/lab4/Texture/衣服.png').then((img)=>{
+        GLroot.addChild('衣服', new GLobj(
+            GLroot.gl,
+            GLobj.translation(-2, 3, -2),
+            GLobj.rotation(0),
+            GLmesh.cube(GLroot.gl),
+            new GLmaterial(0.01, 0.2, -1, 5, [0.3, 0.3, 0.3, 1]).setTexture(GLroot.gl, img),
+            GLobj.scale(1, 1, 1)
+        ));
+    });
+    // 添加光源 绑定一个物体
+    const lightObj = {
+        light: GLroot.addLight(new Pointolite([1, 1, 1], [0, 10, 0])),
+        obj: GLroot.addChild('bulb', new GLobj(
+            GLroot.gl,
+            GLobj.translation(0, 10, 0),
+            GLobj.rotation(0),
+            GLmesh.cube(GLroot.gl, true),   // 设置法向翻转，这样就可以被里面的光源照亮了
+            new GLmaterial(0.01, 1, 0, 10, [1, 1, 1, 1]),  // 漫反射不能不设，不然黑的
+            GLobj.scale(0.2, 0.2, 0.2)
+        ))
+    };
+    // 支持多个点光源
+    GLroot.addLight(new Pointolite([0.9, 0.9, 0.9], [10, 10, 0]));
+    GLroot.addLight(new Pointolite([0.9, 0.9, 0.9], [-10, 10, 0]));
+    GLroot.addLight(new Pointolite([0.9, 0.9, 0.9], [0, 10, 10]));
+    GLroot.addLight(new Pointolite([0.9, 0.9, 0.9], [0, 10, -10]));
+</script>
+<script>
+    // 按键系统 如果仅仅用keydown，长按时会导致按键延迟，而且不能处理多按键
+    const moveController = {
+        keys: [],   // 存储按下了哪些
+        keydown(code) {
+            let keyIndex = this.keys.indexOf(code);
+            if (keyIndex == -1) this.keys.push(code);
+        },
+        keyup(code) {
+            let keyIndex = this.keys.indexOf(code);
+            if (keyIndex != -1) this.keys.splice(keyIndex, 1);
+        },
+        action() {
+            let move = [0, 0, 0];
+            let mult = 0.04;
+            const n = normalVec3_change([camera._n[0], 0, camera._n[2]]);
+            const t = normalVec3_change(Cross(n, camera.up));
+            let rgb = [0, 0, 0];
+            let rgbinverse = 1;
+            for (let keyCode of this.keys) {
+                switch (keyCode) {
+                    // 相机移动
+                    case 87: move[0] += n[0]; move[2] += n[2]; break;   // w
+                    case 83: move[0] -= n[0]; move[2] -= n[2]; break;   // s
+                    case 65: move[0] += t[0]; move[2] += t[2]; break;   // a
+                    case 68: move[0] -= t[0]; move[2] -= t[2]; break;   // d
+                    case 32: move[1]++; break;   // 空格
+                    case 16: move[1]--; break;   // shift
+                    case 17: mult *= 2.5; break;   // ctrl
+                    // 光源移动
+                    case 38: lightObj.light.position[2] -= 0.1; break;   // 上
+                    case 40: lightObj.light.position[2] += 0.1; break;   // 下
+                    case 37: lightObj.light.position[0] += 0.1; break;   // 左
+                    case 39: lightObj.light.position[0] -= 0.1; break;   // 右
+                    case 33: lightObj.light.position[1] += 0.1; break;   // pageup
+                    case 34: lightObj.light.position[1] -= 0.1; break;   // pagedown
+                    // 光源参数变化
+                    case 18: rgbinverse = -1; break; // alt
+                    case 82: rgb[0] += 0.02; break; // r
+                    case 71: rgb[1] += 0.02; break; // g
+                    case 66: rgb[2] += 0.02; break; // b
+                }
+            }
+            camera.move(move, mult);    // 视角移动
+            // 改变光源颜色
+            lightObj.light.color[0] = Math.min(1.5, Math.max(0, lightObj.light.color[0]+rgb[0]*rgbinverse));
+            lightObj.light.color[1] = Math.min(1.5, Math.max(0, lightObj.light.color[1]+rgb[1]*rgbinverse));
+            lightObj.light.color[2] = Math.min(1.5, Math.max(0, lightObj.light.color[2]+rgb[2]*rgbinverse));
+            // 移动光源与绑定物 暂时没有好的办法
+            lightObj.obj.displacement = GLobj.translation(
+                lightObj.light.position[0],
+                lightObj.light.position[1],
+                lightObj.light.position[2]
+            ); GLroot.updateLight(lightObj.light.id);
+        }
+    }
+    // 渲染器
+    const render = {
+        animationId: null,
+        cancelAnimation() {
+            cancelAnimationFrame(this.animationId);
+        },
+        rendering() {
+            moveController.action();
+            GLroot.draw();
+            // 有个语法坑：requestAnimationFrame调用的函数，this指向window
+            this.animationId = requestAnimationFrame(this.rendering.bind(this));
+        }
+    }
+</script>
+<script>
+    function PerspectiveMovement(e) {
+        camera.mouseN(e);
+    }
+    function keyD(e) {
+        moveController.keydown(e.keyCode);
+        e.preventDefault();
+    }
+    function keyU(e) {
+        moveController.keyup(e.keyCode);
+        e.preventDefault();
+    }
+    function wheelControl(e) {
+        let x = e.wheelDelta > 0 ? 1.25 : 0.8;
+        camera.canvasSize[0] *= x;
+        camera.canvasSize[1] *= x;
+    }
+</script>
+<script>
+    // 全屏显示
+    document.addEventListener('fullscreenchange', () => {
+        if (document.fullscreenElement === CANVAS) {
+            CANVAS.removeEventListener('mousedown', lockPointer);
+            CANVAS.requestPointerLock();
+            GLroot.resizeCanvas(screen.width, screen.height);
+            render.rendering();
+        } else {    // 不是全屏时停止渲染
+            render.cancelAnimation();
+            CANVAS.addEventListener('mousedown', lockPointer);
+            GLroot.resizeCanvas();
+            GLroot.draw();  // 防止变形
+        }
+    });
+    CANVAS.addEventListener('mousedown', lockPointer);
+    GLroot.resizeCanvas();
+    GLroot.draw();
+
+    document.addEventListener('pointerlockchange', () => {
+        if (document.pointerLockElement === CANVAS) {
+            CANVAS.addEventListener('mousemove', PerspectiveMovement);
+            document.addEventListener('keydown', keyD);
+            document.addEventListener('keyup', keyU);
+            CANVAS.addEventListener('mousewheel', wheelControl);
+        } else {
+            CANVAS.removeEventListener('mousemove', PerspectiveMovement);
+            document.removeEventListener('keydown', keyD);
+            document.removeEventListener('keyup', keyU);
+            CANVAS.removeEventListener('mousewheel', wheelControl);
+        }
+    });
+    document.addEventListener('pointerlockerror', (e) => {
+        console.log("锁定指针时出错。");
+    });
+    function lockPointer(e) {
+        if (e.button == 0) CANVAS.requestFullscreen();
+    }
+    document.oncontextmenu = function (e) { // 右键选择stl文件
+        var inputFile = document.createElement('input');
+        inputFile.type = 'file';
+        inputFile.addEventListener('change', function (event) {
+            const file = event.target.files[0];
+            let reader = new FileReader();
+            try {
+                reader.readAsArrayBuffer(file);
+                reader.onload = function () {
+                    let body = new GLobj(
+                        GLroot.gl,
+                        GLobj.translation(0, 1.9, -1),
+                        GLobj.rotation(-Math.PI / 2),
+                        GLmesh.STL(GLroot.gl, new Uint8Array(this.result)),
+                        new GLmaterial(0.4, 0.8, -1, 600, [0.3, 0.3, 0.3, 1]),
+                        GLobj.scale(1.1, 1.1, 1.1)
+                    );
+                    let name = file.name.slice(0, -4);
+                    if(name in GLroot.children) {
+                        let i = -1;
+                        let newName;
+                        do{
+                            i += 1;
+                            newName = name + i;
+                        } while(newName in GLroot.children);
+                        name = newName;
+                    } GLroot.addChild(name, body);
+                    GLroot.draw();
+                }
+            }
+            catch (err) {
+                alert('not a stl file!');
+            }
+        });
+        inputFile.click();
+        return false;
+    }
+</script>
+
+</html>
