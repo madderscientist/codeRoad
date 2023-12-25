@@ -1,26 +1,3 @@
-class GLmaterial {
-    constructor(specular, diffusion, ambient, shininess, color) {
-        this.reflect = new Float32Array([specular, diffusion, ambient < 0 ? 0.25 : ambient, shininess]);
-        this.color = new Float32Array([color[0], color[1], color[2], color[3]]);
-        this.texture = null;
-    }
-    setTexture(gl, image) {
-        const texture = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-        if (image.width&0x1==0 && image.height&0x1==0) {    // 是2的幂 
-            gl.generateMipmap(gl.TEXTURE_2D);   // 生成的分子贴图与纹理对象绑定
-        } else {
-            // CLAMP_TO_EDGE 翻译过来就是边缘夹紧的意思，可以理解为任意尺寸的图像源都可以被宽高为1的uv尺寸夹紧。只有CLAMP_TO_EDGE 才能实现非二次幂图像源的显示，其它的参数都不可以。
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        }
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        this.texture = texture;
-        return this;    // 支持用material = new GLmaterial().setTexture();
-    }
-}
-
 class GLmesh {  // 主要实现了特异性颜色的提取 和lab2相比，去掉了mesh中的颜色，颜色由GLmaterial实现
     static idColors = [0];
     static uniqueColor(addin = false) {     // 是否添加入列表
@@ -144,6 +121,65 @@ class GLmesh {  // 主要实现了特异性颜色的提取 和lab2相比，去�
             0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0
         ]));
         return c;
+    }
+    static solidCube(gl) {
+        const v = [
+            // 前
+            -0.5, -0.5, 0.5,
+            0.5, -0.5, 0.5,
+            0.5, 0.5, 0.5,
+            -0.5, 0.5, 0.5,
+            // 后
+            -0.5, -0.5, -0.5,
+            0.5, -0.5, -0.5,
+            0.5, 0.5, -0.5,
+            -0.5, 0.5, -0.5,
+            // 左
+            -0.5, -0.5, -0.5,
+            -0.5, -0.5, 0.5,
+            -0.5, 0.5, 0.5,
+            -0.5, 0.5, -0.5,
+            // 右
+            0.5, -0.5, -0.5,
+            0.5, -0.5, 0.5,
+            0.5, 0.5, 0.5,
+            0.5, 0.5, -0.5,
+            // 上
+            -0.5, 0.5, 0.5,
+            0.5, 0.5, 0.5,
+            0.5, 0.5, -0.5,
+            -0.5, 0.5, -0.5,
+            // 下
+            -0.5, -0.5, 0.5,
+            0.5, -0.5, 0.5,
+            0.5, -0.5, -0.5,
+            -0.5, -0.5, -0.5
+        ];
+        const i = [
+            0, 1, 2, 0, 2, 3,   // 前
+            5, 7, 6, 5, 4, 7,   // 后
+            8, 9, 10, 8, 10, 11,   // 左
+            13, 15, 14, 13, 12, 15,   // 右
+            16, 17, 18, 16, 18, 19,   // 上
+            21, 23, 22, 21, 20, 23   // 下
+        ];
+        const n = [
+            0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1,
+            0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1,
+            -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0,
+            1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
+            0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,
+            0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0
+        ];
+        const UV = [
+            0, 0, 1, 0, 1, 1, 0, 1,
+            0, 0, 1, 0, 1, 1, 0, 1,
+            0, 0, 1, 0, 1, 1, 0, 1,
+            0, 0, 1, 0, 1, 1, 0, 1,
+            0, 0, 1, 0, 1, 1, 0, 1,
+            0, 0, 1, 0, 1, 1, 0, 1
+        ];
+        return new GLmesh(gl, v, i, n, UV);
     }
     /**
      * 球体的网格

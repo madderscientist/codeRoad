@@ -57,8 +57,7 @@ class GLobj {
         0, 0, 0, 1
     ]);
 
-    constructor(gl, displacement, rotation, mesh = null, material = null, scale = GLobj.I) {
-        this.gl = gl;
+    constructor(displacement, rotation, mesh = null, material = null, scale = GLobj.I) {
         // 初始位置
         this.displacement = displacement;
         this.rotation = rotation;
@@ -74,7 +73,6 @@ class GLobj {
         this.transform = MultiMat4(this.transform, t);
     }
     draw(transform) {
-        const g = this.gl;
         // 计算变换矩阵 transform * displacement * rotation * transform * scale
         let t = MultiMat4(transform, this.displacement);// 位移。是左乘
         t = MultiMat4(t, this.rotation);// 旋转。是右乘
@@ -84,58 +82,11 @@ class GLobj {
         // t = MultiMat4(t, this.displacement);
 
         if (this.mesh) {     // 如果是null则不画，表示为一个坐标转换
-            let tempT = MultiMat4(t, this.scale);   // 缩放。需要先作用在原物体，所以右乘
-            g.uniform.translation = tempT;
-            g.uniform.n_translation = inverseMat4(transposeMat4(tempT));
-            // material
-            if(this.material) {
-                g.uniform.u_material = this.material.reflect;
-                g.uniform.u_color = this.material.color;
-                // 纹理渲染配置 uv
-                if(this.material.texture && this.mesh.map) {
-                    g.uniform.u_ifTexture = '1';
-                    g.bindBuffer(g.ARRAY_BUFFER, this.mesh.map);
-                    g.vertexAttribPointer(
-                        g.attribute.a_pin,
-                        2, g.FLOAT, false,
-                        0, 0
-                    ); g.enableVertexAttribArray(g.attribute.a_pin);
-                    g.bindTexture(g.TEXTURE_2D, this.material.texture);
-                } else {
-                    g.uniform.u_ifTexture = '0';
-                    g.disableVertexAttribArray(g.attribute.a_pin);
-                }
-            }
-            // mesh
-            // 顶点位置绑定 xyz
-            g.bindBuffer(g.ARRAY_BUFFER, this.mesh.vertexBuffer);
-            g.vertexAttribPointer(
-                g.attribute.a_position,
-                3, g.FLOAT, false,
-                0, 0
-            ); g.enableVertexAttribArray(g.attribute.a_position);
-            // 顶点法向绑定 xyz
-            g.bindBuffer(g.ARRAY_BUFFER, this.mesh.normalBuffer);
-            g.vertexAttribPointer(
-                g.attribute.a_normal,
-                3, g.FLOAT, false,
-                0, 0
-            ); g.enableVertexAttribArray(g.attribute.a_normal);
-            // 颜色的绑定 rgb
-            if(this.mesh.colorBuffer) {
-                g.bindBuffer(g.ARRAY_BUFFER, this.mesh.colorBuffer);
-                g.vertexAttribPointer(
-                    g.attribute.a_color,
-                    3, g.FLOAT, false,
-                    0, 0
-                ); g.enableVertexAttribArray(g.attribute.a_color);
-            } else {
-                g.disableVertexAttribArray(g.attribute.a_color);
-            }
-            // 序号绑定
-            g.bindBuffer(g.ELEMENT_ARRAY_BUFFER, this.mesh.indexBuffer);
-            // 这两个属性要求绑定在mesh.indexBuffer上！！
-            g.drawElements(g.TRIANGLES, this.mesh.indexBuffer.length, this.mesh.indexBuffer.type, 0);
+            this.material.program.draw({
+                mesh: this.mesh,
+                material: this.material,
+                translation: MultiMat4(t, this.scale)   // 缩放。需要先作用在原物体，所以右乘
+            });
         }
         // 画子物体
         for (let name in this.children) {
@@ -148,15 +99,15 @@ class GLobj {
         return this;
     }
 
-    static async fromObj(gl, objurl, position = GLobj.I, rotation= GLobj.I) {    // 需要mesh.js和parseObj.js的支持
+    static async fromObj(gl, objurl, position = GLobj.I, rotation = GLobj.I) {    // 需要mesh.js和parseObj.js的支持
         const objs = (await parseObj(objurl)).map(obj => new GLobj(
-            gl, GLobj.I, GLobj.I,
+            GLobj.I, GLobj.I,
             new GLmesh(gl, obj.vertex, obj.index, obj.normal, obj.map),
             // new GLmaterial(0.4, 0.8, -1, 600, [1,1,1,1]).setTexture(gl, obj.image)
-            new GLmaterial(obj.specular, obj.diffusion, obj.ambient, obj.shininess, [1,1,1,1]).setTexture(gl, obj.image)
+            new PhongMaterial(obj.specular, obj.diffusion, obj.ambient, obj.shininess, [1, 1, 1, 1]).setTexture(gl, obj.image)
         ));
-        const body = new GLobj(gl, position, rotation);
-        for(let i in objs) body.addChild(i, objs[i]);
+        const body = new GLobj(position, rotation);
+        for (let i in objs) body.addChild(i, objs[i]);
         return body;
     }
 }
@@ -170,7 +121,12 @@ class GLobjRoot {
         this.drawProgram = null;
         this.rule = 100;
         this.camera = null;
+        this.programs = {};
         this.pointolite = []; this.pointolite.maxLen = 10;
+        this.skyBox = {
+            texture: null,
+            vertexBuffer: null
+        };   // 天空盒
     }
     /**
      * 初始化GL
@@ -183,12 +139,18 @@ class GLobjRoot {
         // GL初始化
         const gl = MyGL.new(canvas);
         this.gl = gl;
-        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
         gl.activeTexture(gl.TEXTURE0);
         // 用专用的着色器
-        gl.useProg(this.iniDraw(gl));   // 不use也可，默认use最后ini的
+        this.programs['skyBox'] = this.iniSkyBox(gl);
+        this.programs['env'] = this.iniEnv(gl);
+        this.programs['phong'] = this.iniBasic(gl);
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        gl.enable(gl.DEPTH_TEST);
+        gl.cullFace(gl.FRONT);
     }
-    iniDraw(gl) {
+    //========着色器=========//
+    // 贴图平滑光照
+    iniBasic(gl) {
         const vsSource = `precision mediump float;
             attribute vec4 a_position;      // 传3个参数，则第四个参数默认为1；否则默认都是0
             attribute vec3 a_color;         // 如果禁用了此attribute，值是0
@@ -255,16 +217,182 @@ class GLobjRoot {
                 gl_FragColor = vec4(ambient + diffuse + specular, 1.0);
             }
         `;
-        let drawProgram = gl.iniProgram(vsSource, fsSource)
+        let drawProgram = gl.iniProgram(vsSource, fsSource);
         gl.useProg(drawProgram);
-        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-        gl.enable(gl.DEPTH_TEST);
-        gl.uniform.translation = GLobj.I;
+        // 初值
         gl.uniform.camera = GLobj.I;
         gl.uniform.u_amblightColor = new Float32Array([1, 1, 1]);   // 默认白色环境光
         gl.uniform.u_pointoliteNum = '0';
         gl.uniform.u_sampler = '0';
+        // 着色器配置
+        drawProgram.draw = ({mesh, material, translation}) => {
+            gl.useProg(drawProgram);
+            gl.uniform.translation = translation;
+            gl.uniform.n_translation = inverseMat4(transposeMat4(translation));
+            if (material) {
+                gl.uniform.u_material = material.reflect;
+                gl.uniform.u_color = material.color;
+                // 纹理渲染配置 uv
+                if (material.texture && mesh.map) {
+                    gl.uniform.u_ifTexture = '1';
+                    gl.bindBuffer(gl.ARRAY_BUFFER, mesh.map);
+                    gl.vertexAttribPointer(
+                        gl.attribute.a_pin,
+                        2, gl.FLOAT, false,
+                        0, 0
+                    ); gl.enableVertexAttribArray(gl.attribute.a_pin);
+                    // gl.activeTexture(gl.TEXTURE0);   // 默认只用0
+                    gl.bindTexture(gl.TEXTURE_2D, material.texture);
+                } else {
+                    gl.uniform.u_ifTexture = '0';
+                    gl.disableVertexAttribArray(gl.attribute.a_pin);
+                }
+            }
+            // 顶点位置绑定 xyz
+            gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vertexBuffer);
+            gl.vertexAttribPointer(
+                gl.attribute.a_position,
+                3, gl.FLOAT, false,
+                0, 0
+            ); gl.enableVertexAttribArray(gl.attribute.a_position);
+            // 顶点法向绑定 xyz
+            gl.bindBuffer(gl.ARRAY_BUFFER, mesh.normalBuffer);
+            gl.vertexAttribPointer(
+                gl.attribute.a_normal,
+                3, gl.FLOAT, false,
+                0, 0
+            ); gl.enableVertexAttribArray(gl.attribute.a_normal);
+            // 颜色的绑定 rgb
+            if (mesh.colorBuffer) {
+                gl.bindBuffer(gl.ARRAY_BUFFER, mesh.colorBuffer);
+                gl.vertexAttribPointer(
+                    gl.attribute.a_color,
+                    3, gl.FLOAT, false,
+                    0, 0
+                ); gl.enableVertexAttribArray(gl.attribute.a_color);
+            } else {
+                gl.disableVertexAttribArray(gl.attribute.a_color);
+            }
+            // 序号绑定
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.indexBuffer);
+            // 这两个属性要求绑定在mesh.indexBuffer上！！
+            gl.drawElements(gl.TRIANGLES, mesh.indexBuffer.length, mesh.indexBuffer.type, 0);
+        };
         return drawProgram;
+    }
+    // 天空盒
+    iniSkyBox(gl) {
+        const vsSource = `precision mediump float;
+            attribute vec4 a_position;
+            varying vec4 v_position;
+            void main() {
+                v_position = a_position;
+                gl_Position = a_position;
+                gl_Position.z = 1.0;
+            }
+        `;
+        const fsSource = `precision mediump float;
+            uniform samplerCube u_skybox;
+            uniform mat4 camera;
+            varying vec4 v_position;
+            void main() {
+                vec4 t = camera * v_position;
+                gl_FragColor = textureCube(u_skybox, normalize(t.xyz / t.w));
+            }
+        `;
+        let skyBoxProgram = gl.iniProgram(vsSource, fsSource);
+        gl.useProg(skyBoxProgram);
+        gl.uniform.camera = GLobj.I;
+        gl.uniform.u_skybox = '0';
+        // skyBoxProgram.draw不外泄 在GLobjRoot.draw中
+        return skyBoxProgram;
+    }
+    // 环境贴图
+    iniEnv(gl) {
+        const vsSource = `precision mediump float;
+            attribute vec4 a_position;
+            attribute vec3 a_normal;
+            attribute vec3 a_color;
+            
+            uniform mat4 translation;
+            uniform mat4 n_translation;
+            uniform mat4 camera;        // 统一配置
+            
+            varying vec3 v_position;    // 世界坐标
+            varying vec3 v_normal;      // 世界法向
+            varying vec3 v_color;       // 由顶点着色器传入的顶点定义的颜色
+            
+            void main() {
+                vec4 world_position = translation*a_position;
+                gl_Position = camera*world_position;
+                v_normal = normalize(mat3(n_translation) * a_normal);
+                v_position = world_position.xyz;
+                v_color = a_color;
+            }
+        `;
+        const fsSource = `precision mediump float;
+            varying vec3 v_normal;      // 片元法向
+            varying vec3 v_position;    // 像素在世界的原始坐标
+            varying vec3 v_color;       // 网格自带的颜色
+
+            uniform samplerCube u_environment;  // 环境贴图
+            uniform vec3 u_cameraPosition;  // 观察者的位置 统一配置
+            uniform float u_roughness;      // 粗糙度 0~1 决定和本色的混合
+            uniform vec4 u_color;           // 物体材质确定的颜色
+            
+            void main() {
+                vec3 objColor = u_color.a * u_color.rgb + (1.0-u_color.a) * v_color;    // 物体本来的颜色，由来两个颜色来源加权得到
+                vec3 worldNormal = normalize(v_normal);
+                vec3 eyeToSurfaceDir = normalize(v_position - u_cameraPosition);
+                vec3 direction = reflect(eyeToSurfaceDir, worldNormal);
+                gl_FragColor = vec4((1.0 - u_roughness) * textureCube(u_environment, direction).rgb + u_roughness * objColor, 1.0);
+            }
+        `;
+        let envProgram = gl.iniProgram(vsSource, fsSource);
+        // 初值
+        gl.useProg(envProgram);
+        gl.uniform.camera = GLobj.I;
+        gl.uniform.u_environment = '0';
+        // 着色器配置
+        envProgram.draw = ({mesh, material, translation}) => {
+            gl.useProg(envProgram);
+            gl.uniform.translation = translation;
+            gl.uniform.n_translation = inverseMat4(transposeMat4(translation));
+            gl.uniform.u_roughness = material.roughness;
+            gl.uniform.u_color = material.color;
+            // gl.activeTexture(gl.TEXTURE0);   // 默认只用0
+            gl.bindTexture(gl.TEXTURE_CUBE_MAP, material.texture);
+            // 顶点位置绑定 xyz
+            gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vertexBuffer);
+            gl.vertexAttribPointer(
+                gl.attribute.a_position,
+                3, gl.FLOAT, false,
+                0, 0
+            ); gl.enableVertexAttribArray(gl.attribute.a_position);
+            // 顶点法向绑定 xyz
+            gl.bindBuffer(gl.ARRAY_BUFFER, mesh.normalBuffer);
+            gl.vertexAttribPointer(
+                gl.attribute.a_normal,
+                3, gl.FLOAT, false,
+                0, 0
+            ); gl.enableVertexAttribArray(gl.attribute.a_normal);
+            // 颜色的绑定 rgb
+            if (mesh.colorBuffer) {
+                gl.bindBuffer(gl.ARRAY_BUFFER, mesh.colorBuffer);
+                gl.vertexAttribPointer(
+                    gl.attribute.a_color,
+                    3, gl.FLOAT, false,
+                    0, 0
+                ); gl.enableVertexAttribArray(gl.attribute.a_color);
+            } else {
+                gl.disableVertexAttribArray(gl.attribute.a_color);
+            }
+            // 序号绑定
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.indexBuffer);
+            // 这两个属性要求绑定在mesh.indexBuffer上！！
+            gl.drawElements(gl.TRIANGLES, mesh.indexBuffer.length, mesh.indexBuffer.type, 0);
+        };
+        return envProgram;
     }
     //========光照管理=========//
     // 设计理念时光源不常动，因此在添加、删除时更新
@@ -274,6 +402,7 @@ class GLobjRoot {
         if (l.length > l.maxLen) throw new Error('超过最大点光源数目！');
         let i = l.push(pointolite) - 1;
         pointolite.id = i;
+        this.gl.useProg(this.programs['phong']);
         this.gl.uniform[`u_pointolitePosition[${i}]`] = pointolite.position;
         this.gl.uniform[`u_pointoliteColor[${i}]`] = pointolite.color;
         this.gl.uniform.u_pointoliteNum = l.length.toString();  // 因为一些局限性只能这样写了 见gl拓展类的uniform的set函数
@@ -283,6 +412,7 @@ class GLobjRoot {
         const l = this.pointolite;
         if (id < 0 || id >= l.length) return;
         l.splice(id, 1);
+        this.gl.useProg(this.programs['phong']);
         for (; id < l.length; id++) {
             l[i].id = id;
             this.gl.uniform[`u_pointolitePosition[${id}]`] = l[id].position;
@@ -292,6 +422,7 @@ class GLobjRoot {
     }
     updateLight(id = -1) {  // 可以选择一个更新，也可以全部更新
         const l = this.pointolite;
+        this.gl.useProg(this.programs['phong']);
         if (id < 0 || id >= l.length) {
             for (let i = 0; i < l.length; i++) {
                 this.gl.uniform[`u_pointolitePosition[${i}]`] = l[i].position;
@@ -304,16 +435,111 @@ class GLobjRoot {
     }
 
     draw() {
-        this.gl.Clear(0, 0, 0, 0);
-        this.gl.uniform.camera = this.camera.Mat();
-        this.gl.uniform.u_cameraPosition = this.camera.position;
+        const g = this.gl;
+        g.Clear(0, 0, 0, 0);
+        const cameraP = this.camera.perspectiveMat();
+        const cameraL = this.camera.postureMat();
+        const camera = MultiMat4(cameraP, cameraL);
+
+        // 准备着色器
+        g.useProg(this.programs['env']);
+        g.uniform.camera = camera;
+        g.uniform.u_cameraPosition = this.camera.position;
+        g.useProg(this.programs['phong']);
+        g.uniform.camera = camera;
+        g.uniform.u_cameraPosition = this.camera.position;
+        // 绘制物体
+        g.depthFunc(g.LESS);
+        g.enable(g.CULL_FACE);
         for (let name in this.children) {
             this.children[name].draw(GLobj.I);
         }
+        // 绘制天空盒
+        if (this.skyBox.texture) {
+            g.depthFunc(g.LEQUAL);  // 让背景可以画在1的位置
+            g.disable(g.CULL_FACE);
+            g.useProg(this.programs['skyBox']);
+            let viewMatrix = cameraL;
+            viewMatrix[3] = 0; viewMatrix[7] = 0; viewMatrix[11] = 0; // 保证天空盒不会移动。没有这行效果很奇怪
+            g.uniform.camera = inverseMat4(MultiMat4(cameraP, viewMatrix));
+            g.bindBuffer(g.ARRAY_BUFFER, this.skyBox.vertexBuffer);
+            g.vertexAttribPointer(
+                g.attribute.a_position,
+                2, g.FLOAT, false, 0, 0
+            ); g.enableVertexAttribArray(g.attribute.a_position);
+            g.drawArrays(g.TRIANGLES, 0, 6);
+        }
     }
+    //========天空盒管理=========//
+    setSkyBox({ nx, ny, nz, px, py, pz }) {   // 输入是可以直接用的img
+        const g = this.gl;
+        g.pixelStorei(g.UNPACK_FLIP_Y_WEBGL, 0);    // 立方体贴图（cubemap）时，通常不需要翻转 y 轴。这是因为立方体贴图的六个面的纹理坐标系统与 WebGL 的纹理坐标系统是一致的，都是原点（0,0）在左下角。
+        g.useProg(this.programs['skyBox']);
+        if (this.skyBox.texture) g.deleteTexture(this.skyBox.texture);
+        this.skyBox.texture = g.createTexture();
+        g.bindTexture(g.TEXTURE_CUBE_MAP, this.skyBox.texture);
+        g.texImage2D(g.TEXTURE_CUBE_MAP_NEGATIVE_X, 0, g.RGBA, g.RGBA, g.UNSIGNED_BYTE, nx);
+        g.texImage2D(g.TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, g.RGBA, g.RGBA, g.UNSIGNED_BYTE, ny);
+        g.texImage2D(g.TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, g.RGBA, g.RGBA, g.UNSIGNED_BYTE, nz);
+        g.texImage2D(g.TEXTURE_CUBE_MAP_POSITIVE_X, 0, g.RGBA, g.RGBA, g.UNSIGNED_BYTE, px);
+        g.texImage2D(g.TEXTURE_CUBE_MAP_POSITIVE_Y, 0, g.RGBA, g.RGBA, g.UNSIGNED_BYTE, py);
+        g.texImage2D(g.TEXTURE_CUBE_MAP_POSITIVE_Z, 0, g.RGBA, g.RGBA, g.UNSIGNED_BYTE, pz);
+        g.texParameteri(g.TEXTURE_CUBE_MAP, g.TEXTURE_MIN_FILTER, g.LINEAR);
+        g.texParameteri(g.TEXTURE_CUBE_MAP, g.TEXTURE_MAG_FILTER, g.LINEAR);
+        g.texParameteri(g.TEXTURE_CUBE_MAP, g.TEXTURE_WRAP_S, g.CLAMP_TO_EDGE);
+        g.texParameteri(g.TEXTURE_CUBE_MAP, g.TEXTURE_WRAP_T, g.CLAMP_TO_EDGE);
+        g.texParameteri(g.TEXTURE_CUBE_MAP, g.TEXTURE_WRAP_R, g.CLAMP_TO_EDGE);
+        if (!this.skyBox.vertexBuffer) {
+            this.skyBox.vertexBuffer = g.createBuffer();
+            g.bindBuffer(g.ARRAY_BUFFER, this.skyBox.vertexBuffer);
+            g.bufferData(g.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), g.STATIC_DRAW);
+        }
+        console.log('天空盒设置成功');
+    }
+    setSkyBoxFromUrl({ nx, ny, nz, px, py, pz }) {
+        const promises = [nx, ny, nz, px, py, pz].map(url => new Promise((resolve, reject) => {
+            const img = new Image();
+            img.src = url;
+            img.onload = () => resolve(img);
+            img.onerror = (e) => {
+                console.error(e);
+                reject(url);
+            };
+        }));
+        return Promise.all(promises).then(imgs => {
+            this.setSkyBox({
+                nx: imgs[0], ny: imgs[1], nz: imgs[2],
+                px: imgs[3], py: imgs[4], pz: imgs[5]
+            });
+        }).catch(url => console.error(`天空盒图片加载失败：${url}`));
+    }
+
+    /**
+     * 加入世界树 会自动为材质配置着色器
+     * @param {String} name 
+     * @param {GLobj} child 
+     * @returns {GLobj}
+     */
     addChild(name, child) {
         this.children[name] = child;
+        const addProgram = (parent) => {
+            // 赋予着色器
+            this.setMaterialProgram(parent.material);
+            // 递归
+            for (let c in parent.children) addProgram(parent.children[c]);
+        }
+        addProgram(child);
         return child;
+    }
+    /**
+     * 给材质配置本gl的着色器
+     * @param {PhongMaterial | EnvMaterial} material 材质类
+     * @returns {PhongMaterial | EnvMaterial} 配置好着色器的material
+     */
+    setMaterialProgram(material) {
+        if(material instanceof PhongMaterial) material.program = this.programs['phong'];
+        else if(material instanceof EnvMaterial) material.program = this.programs['env'];
+        return material;
     }
     /**
      * 像素到米的单位转换
@@ -414,3 +640,9 @@ class VirtualTrackingBall {
         return MultiMat4(Rx_, MultiMat4(Ry_, MultiMat4(Rz, MultiMat4(Ry, Rx))));
     }
 }
+/* 创建一个材质：
+首先新建材质类
+其次在GLobjRoot中新增着色器生成函数，要求返回编译好的着色器对象，其draw属性完成绘制，传参为{mesh, material, translation}
+接着，在GLobjRoot.iniGL中调用新的着色器生成函数并保存至GLobjRoot.programs
+最后，在GLobjRoot.setMaterialProgram中关联两者
+ */

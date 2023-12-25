@@ -5,12 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>点击以全屏</title>
-    <script src="./mat.js"></script>
+    <script src="../lab3/mat.js"></script>
     <script src="../gl.js"></script>
     <script src="./parseObj.js"></script>
     <script src="./gl_obj.js"></script>
     <script src="../lab3/camera.js"></script>
     <script src="./mesh.js"></script>
+    <script src="./material.js"></script>
 </head>
 <script>
     async function loadImg(url) {
@@ -40,51 +41,80 @@
     const CANVAS = document.getElementById('glcanvas');
     GLroot.iniGL(CANVAS, 2000);
     const camera = GLroot.camera;
+    const PORT = 5501;
+</script>
+<script>
+    // 添加天空盒
+    GLroot.setSkyBoxFromUrl({
+        nx: `http://127.0.0.1:${PORT}/lab4/skybox/cartoon/nx.png`,
+        ny: `http://127.0.0.1:${PORT}/lab4/skybox/cartoon/ny.png`,
+        nz: `http://127.0.0.1:${PORT}/lab4/skybox/cartoon/nz.png`,
+        px: `http://127.0.0.1:${PORT}/lab4/skybox/cartoon/px.png`,
+        py: `http://127.0.0.1:${PORT}/lab4/skybox/cartoon/py.png`,
+        pz: `http://127.0.0.1:${PORT}/lab4/skybox/cartoon/pz.png`,
+    }).then(() => {
+        GLroot.addChild('环境贴图', new GLobj(
+            GLobj.translation(-5, 0.5, 6),
+            GLobj.rotation(0),
+            GLmesh.solidCube(GLroot.gl),
+            new EnvMaterial(GLroot.skyBox.texture, [1, 1, 1, 1], 0),
+            GLobj.scale(1, 1, 1)
+        ));
+        GLroot.addChild('环境贴图2', new GLobj(
+            GLobj.translation(-5, 1, 4),
+            GLobj.rotation(0),
+            GLmesh.sphere(GLroot.gl, 4),
+            new EnvMaterial(GLroot.skyBox.texture, [1, 1, 1, 1], 0),
+            GLobj.scale(1, 1, 1)
+        ));
+        GLroot.addChild('环境贴图3', new GLobj(
+            GLobj.translation(-5, 0.5, 2),
+            GLobj.rotation(0),
+            GLmesh.cubetest(GLroot.gl),
+            new EnvMaterial(GLroot.skyBox.texture, [1, 0, 0, 0.1], 0.4),
+            GLobj.scale(1, 1, 1)
+        ));
+    });
 </script>
 <script>
     // 添加物品
-    GLroot.addChild('obj', new GLobj(
-        GLroot.gl,
+    GLroot.addChild('cubetest', new GLobj(
         GLobj.translation(0, 1, -1),
         GLobj.rotation(0),
         GLmesh.cubetest(GLroot.gl),
-        new GLmaterial(0.1, 1, -1, 100, [1, 1, 1, 0.2]),
+        new PhongMaterial(0.1, 1, -1, 100, [1, 1, 1, 0.2]),
         GLobj.scale(1, 2, 1)
     ));
-    GLroot.addChild('obj2', new GLobj(
-        GLroot.gl,
+    GLroot.addChild('solidCube', new GLobj(
         GLobj.translation(5, 0.5, 0),
-        GLobj.rotation(0),
-        GLmesh.cube(GLroot.gl),
-        new GLmaterial(0.05, 0.4, -1, 50, [0.1, 0.6, 0.3, 1]),
+        GLobj.rotation(0, 0.3, 0.2),
+        GLmesh.solidCube(GLroot.gl),
+        new PhongMaterial(0.05, 0.4, -1, 50, [0.1, 0.6, 0.3, 1]),
         GLobj.scale(1, 1, 1)
     ));
-    GLroot.addChild('obj3', new GLobj(
-        GLroot.gl,
+    GLroot.addChild('sphere', new GLobj(
         GLobj.translation(0, 1, 5),
         GLobj.rotation(0),
         GLmesh.sphere(GLroot.gl, 18),
-        new GLmaterial(0.08, 0.2, -1, 100, [0.7, 0.2, 0.5, 1]),
+        new PhongMaterial(0.08, 0.2, -1, 100, [0.7, 0.2, 0.5, 1]),
         GLobj.scale(1, 1, 1)
     ));
-    GLroot.addChild('gnd', new GLobj(
-        GLroot.gl,
-        GLobj.translation(0, -0.005, 0),
-        GLobj.rotation(0),
-        GLmesh.cube(GLroot.gl),
-        new GLmaterial(0.01, 0.2, -1, 5, [0.3, 0.3, 0.3, 1]),
-        GLobj.scale(100, 0.01, 100)
-    ));
-    GLobj.fromObj(GLroot.gl, 'http://127.0.0.1:5500/lab4/安柏.obj').then(o=>{
+    // GLroot.addChild('gnd', new GLobj(
+    //     GLobj.translation(0, -0.005, 0),
+    //     GLobj.rotation(0),
+    //     GLmesh.cube(GLroot.gl),
+    //     new PhongMaterial(0.01, 0.2, -1, 5, [0.3, 0.3, 0.3, 1]),
+    //     GLobj.scale(100, 0.01, 100)
+    // ));
+    GLobj.fromObj(GLroot.gl, `http://127.0.0.1:${PORT}/lab4/安柏.obj`).then(o => {
         GLroot.addChild('安柏', o);
     });
-    loadImg('http://127.0.0.1:5500/lab4/Texture/衣服.png').then((img)=>{
-        GLroot.addChild('衣服', new GLobj(
-            GLroot.gl,
+    loadImg(`http://127.0.0.1:${PORT}/lab4/Texture/衣服.png`).then((img) => {
+        GLroot.addChild('贴图', new GLobj(
             GLobj.translation(-2, 3, -2),
             GLobj.rotation(0),
             GLmesh.cube(GLroot.gl),
-            new GLmaterial(0.01, 0.2, -1, 5, [0.3, 0.3, 0.3, 1]).setTexture(GLroot.gl, img),
+            new PhongMaterial(0.01, 0.5, -1, 5, [0.3, 0.3, 0.3, 1]).setTexture(GLroot.gl, img),
             GLobj.scale(1, 1, 1)
         ));
     });
@@ -92,11 +122,10 @@
     const lightObj = {
         light: GLroot.addLight(new Pointolite([1, 1, 1], [0, 10, 0])),
         obj: GLroot.addChild('bulb', new GLobj(
-            GLroot.gl,
             GLobj.translation(0, 10, 0),
             GLobj.rotation(0),
             GLmesh.cube(GLroot.gl, true),   // 设置法向翻转，这样就可以被里面的光源照亮了
-            new GLmaterial(0.01, 1, 0, 10, [1, 1, 1, 1]),  // 漫反射不能不设，不然黑的
+            new PhongMaterial(0.01, 1, 0, 10, [1, 1, 1, 1]),  // 漫反射不能不设，不然黑的
             GLobj.scale(0.2, 0.2, 0.2)
         ))
     };
@@ -151,9 +180,9 @@
             }
             camera.move(move, mult);    // 视角移动
             // 改变光源颜色
-            lightObj.light.color[0] = Math.min(1.5, Math.max(0, lightObj.light.color[0]+rgb[0]*rgbinverse));
-            lightObj.light.color[1] = Math.min(1.5, Math.max(0, lightObj.light.color[1]+rgb[1]*rgbinverse));
-            lightObj.light.color[2] = Math.min(1.5, Math.max(0, lightObj.light.color[2]+rgb[2]*rgbinverse));
+            lightObj.light.color[0] = Math.min(1.5, Math.max(0, lightObj.light.color[0] + rgb[0] * rgbinverse));
+            lightObj.light.color[1] = Math.min(1.5, Math.max(0, lightObj.light.color[1] + rgb[1] * rgbinverse));
+            lightObj.light.color[2] = Math.min(1.5, Math.max(0, lightObj.light.color[2] + rgb[2] * rgbinverse));
             // 移动光源与绑定物 暂时没有好的办法
             lightObj.obj.displacement = GLobj.translation(
                 lightObj.light.position[0],
@@ -246,17 +275,17 @@
                         GLobj.translation(0, 1.9, -1),
                         GLobj.rotation(-Math.PI / 2),
                         GLmesh.STL(GLroot.gl, new Uint8Array(this.result)),
-                        new GLmaterial(0.4, 0.8, -1, 600, [0.3, 0.3, 0.3, 1]),
+                        new PhongMaterial(0.4, 0.8, -1, 600, [0.3, 0.3, 0.3, 1]),
                         GLobj.scale(1.1, 1.1, 1.1)
                     );
                     let name = file.name.slice(0, -4);
-                    if(name in GLroot.children) {
+                    if (name in GLroot.children) {
                         let i = -1;
                         let newName;
-                        do{
+                        do {
                             i += 1;
                             newName = name + i;
-                        } while(newName in GLroot.children);
+                        } while (newName in GLroot.children);
                         name = newName;
                     } GLroot.addChild(name, body);
                     GLroot.draw();

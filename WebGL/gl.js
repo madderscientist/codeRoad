@@ -13,20 +13,21 @@ class MyGL extends (WebGL2RenderingContext || WebGLRenderingContext) {  // 如�
         // 拓展其功能
         // gl.canvas = canvas;  // getContext已经设置了其canvas属性
         Object.setPrototypeOf(gl, MyGL.prototype);          // gl.__proto__ = MyGL.prototype; 不行，因为.__protp__已经被废弃
-        MyGL.prototype.params.call(gl);
         return gl;
     }
 
     params() {
-        // 需要保证program处于活动状态
-        this._attribute = {};
-        this._uniform = {};
-        this.attribute = new Proxy(this._attribute, {
+        const prog = this.program;
+        // 思想：将属性绑定到program上，切换program的时候就不用清空gl上的属性了
+        prog._attribute = {};
+        prog._uniform = {};
+        // 曾经直接绑到this.uniform上会有bug! 因为proxy已经固化了target。所以绑到program上
+        prog.attribute = new Proxy(prog._attribute, {
             // 用箭头函数，this指向MyGL；用function，this指向这个handler
             get: (target, key) => {
                 // getAttribLocation只会获取在main中用到的量。定义了没用估计就被优化掉了，所以获取返回的是-1
                 if (!(key in target)) {
-                    const loc = this.getAttribLocation(this.program, key);
+                    const loc = this.getAttribLocation(prog, key);
                     if (loc == -1) return null;
                     else target[key] = loc;
                 }
@@ -34,7 +35,7 @@ class MyGL extends (WebGL2RenderingContext || WebGLRenderingContext) {  // 如�
             },
             set: (target, key, value) => {
                 if (!(key in target)) {
-                    const loc = this.getAttribLocation(this.program, key);
+                    const loc = this.getAttribLocation(prog, key);
                     if (loc == -1) return null;
                     else target[key] = loc;
                 }
@@ -54,17 +55,17 @@ class MyGL extends (WebGL2RenderingContext || WebGLRenderingContext) {  // 如�
                 return true;
             }
         });
-        this.uniform = new Proxy(this._uniform, {
+        prog.uniform = new Proxy(prog._uniform, {
             // 用箭头函数，this指向MyGL；用function，this指向这个handler
             get: (target, key) => {
                 if (!(key in target))
-                    target[key] = this.getUniformLocation(this.program, key);
+                    target[key] = this.getUniformLocation(prog, key);
                 return target[key];
-                // return this.getUniform(this.program, target[key]);   // 和attribute保持一致，故不用这种。而且uniform的赋值方式有很多
+                // return this.getUniform(prog, target[key]);   // 和attribute保持一致，故不用这种。而且uniform的赋值方式有很多
             },
             set: (target, key, value) => {
                 if (!(key in target))
-                    target[key] = this.getUniformLocation(this.program, key);
+                    target[key] = this.getUniformLocation(prog, key);
 
                 function d1(value) {
                     switch (value.length) {
@@ -174,9 +175,9 @@ class MyGL extends (WebGL2RenderingContext || WebGLRenderingContext) {  // 如�
 
     useProg(program) {
         this.program = program;
-        this.useProgram(program);   
-        // 多program时，每次切换program后都要重新设置attribute和uniform
-        this._attribute = {};
-        this._uniform = {};
+        if(!program._uniform || !program._attribute) this.params();
+        this.uniform = program.uniform;
+        this.attribute = program.attribute;
+        this.useProgram(program);
     }
 }

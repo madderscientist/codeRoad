@@ -158,8 +158,31 @@ Promise.all(promises)
     });
 ```
 
+## 天空盒
+[全景图转cubemap](https://jaxry.github.io/panorama-to-cubemap/?source=post_page-----dd28ebaef48c--------------------------------)
+pz: 放z正半轴的
+py：放y正半轴的（上面）
+ny：下面
+
+[用一个平面完成天空盒](https://webglfundamentals.org/webgl/lessons/zh_cn/webgl-skybox.html)
+说是天空盒，其实只是使用了一个平面。这个平面处于相机坐标系下的绝对位置(即视角变换不作用于平面)，但是纹理的映射关系和相机一起变换。
+默认是小于1才渲染，而等于1不渲染。为了让平面处于最深处，需要设置其z为1.0。这时需要调用gl.depthFunc(gl.LEQUAL)。
+
+## 多着色器
+在[学习three的架构](./学习three的架构.md)中，我总结了Three的着色器管理。复杂情况多着色器很重要。比如天空盒、纹理光照、环境贴图、纹理场，就是三种不同的着色器。
+为了实现多着色器，当前gl拓展类需要更改，uniform的proxy需要转移到program上。
+其次，每个material需要绑定着色器。着色器的选择由material决定。为了解耦，material只有在加入GLobjRoot的时候才会被赋予着色器(地址)，也就是说需要手动绑定。不同着色器对应不同的赋值操作，最懂着色器的非着色器对象莫属。所以决定充分利用js“基于对象”的编程思维，在编译着色器之后立马为着色器程序对象配备配套绘制程序，程序使用类似闭包的做法固定了gl，这样GLobj就不需要gl这个对象了。传参如何确定？由于GLobj类只提供了父子系统，即每个物体的位置变换矩阵，所以传参为{mesh, material, translation}。
+总结，gl和着色器绑定在绘制程序中，绘制程序绑定着色器程序，着色器程序绑定到material上，material绑定到GLobj上。
+创建一个新材质的流程：
+1. 新建材质类
+2. 在GLobjRoot中新增着色器生成函数，要求返回编译好的着色器对象，其draw属性完成绘制，传参为{mesh, material, translation}
+3. 在GLobjRoot.iniGL中调用新的着色器生成函数并保存至GLobjRoot.programs['新着色器名']
+4. 在GLobjRoot.setMaterialProgram中关联两者：if(material instanceof 新材质类名) material.program = this.programs['新着色器名'];
+
+
+## 坑
+gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1); 对于一般的纹理要这么做，但是对于cubemap不需要。
+
 # 来不及实现（懒得实现）的想法
 ## 纹理场的其他用途
 幻影坦克！专门写一个带透明度的纹理着色器，用纹理场的方法处理。
-## 多着色器？
-在[学习three的架构](./学习three的架构.md)中，我总结了Three的着色器管理。复杂情况多着色器很重要。如果要用多着色器，当前gl拓展类需要更改，uniform的proxy需要转移到program上。不过这个实验用最高级的着色器：光照+纹理
