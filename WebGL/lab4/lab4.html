@@ -45,10 +45,7 @@
     const CANVAS = document.getElementById('glcanvas');
     GLroot.iniGL(CANVAS, 2000);
     const camera = GLroot.camera;
-    let rootURL = getCurrentBase();
-    if (rootURL.startsWith('http://htmlpreview.github.io/?')) {
-        rootURL = rootURL.substring('http://htmlpreview.github.io/?'.length);
-    }
+    const rootURL = getCurrentBase();
 </script>
 <script>
     // 添加天空盒
@@ -106,6 +103,13 @@
         new PhongMaterial(0.08, 0.2, -1, 100, [0.7, 0.2, 0.5, 1]),
         GLobj.scale(1, 1, 1)
     ));
+    GLroot.addChild('lineSphere', new GLobj(
+        GLobj.translation(0, 5, 5),
+        GLobj.rotation(0),
+        GLmesh.sphere(GLroot.gl, 8),
+        null,
+        GLobj.scale(3, 1, 1)
+    ));
     // GLroot.addChild('gnd', new GLobj(
     //     GLobj.translation(0, -0.005, 0),
     //     GLobj.rotation(0),
@@ -116,13 +120,21 @@
     GLobj.fromObj(GLroot.gl, `${rootURL}/lab4/安柏.obj`).then(o => {
         GLroot.addChild('安柏', o);
     });
-    loadImg(`${rootURL}/lab4/Texture/衣服.png`).then((img) => {
-        GLroot.addChild('贴图', new GLobj(
-            GLobj.translation(-2, 3, -2),
+    // loadImg(`${rootURL}/lab4/Texture/衣服.png`).then((img) => {
+    loadImg(`${rootURL}/lab4/skybox/real/pz.png`).then((img) => {
+        GLroot.addChild('textureField_nfix', new GLobj(
+            GLobj.translation(2, 3, -2),
             GLobj.rotation(0),
             GLmesh.cube(GLroot.gl),
-            new PhongMaterial(0.01, 0.5, -1, 5, [0.3, 0.3, 0.3, 1]).setTexture(GLroot.gl, img),
-            GLobj.scale(1, 1, 1)
+            new TextureFieldMaterial(PhongMaterial.Image2Texture(GLroot.gl, img),[-0.1,-0.3,-0.1,0.1],[0.2,-0.1,0.4,-0.3]),
+            GLobj.scale(4, 4, 0.01)
+        ));
+        GLroot.addChild('textureField_fix', new GLobj(
+            GLobj.translation(-10, 5, -2.5),
+            GLobj.rotation(0),
+            GLmesh.cube(GLroot.gl),
+            new TextureFieldMaterial(PhongMaterial.Image2Texture(GLroot.gl, img),[-0.1,-0.3,-0.1,0.1],[0.2,-0.1,0.4,-0.3],true),
+            GLobj.scale(0.01, 20, 50)
         ));
     });
     // 添加光源 绑定一个物体

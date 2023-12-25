@@ -1,10 +1,10 @@
 # 实验四 纹理
 实现背景和物体表面的贴图，实现下面几种效果：
-（1） 贴图固定在物体表面，随物体变动
-（2） 纹理场效果
-（3） 环境贴图效果
-[demo](http://htmlpreview.github.io/?https://github.com/madderscientist/codeRoad/blob/main/WebGL/lab4/lab4.html)<br>
+1. 贴图固定在物体表面，随物体变动
+2. 纹理场效果
+3. 环境贴图效果
 最关键的地方在于如何将纹理整合进当前系统。
+这个不能用“http://htmlpreview.github.io/?”在线预览了……<br>
 
 ## 基础：WebGL 纹理使用
 ```glsl

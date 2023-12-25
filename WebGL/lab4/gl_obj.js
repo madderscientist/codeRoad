@@ -142,8 +142,11 @@ class GLobjRoot {
         gl.activeTexture(gl.TEXTURE0);
         // 用专用的着色器
         this.programs['skyBox'] = this.iniSkyBox(gl);
+        this.programs['line'] = this.iniLine(gl);   // 给无材质GLobj使用
+        this.programs['field'] = this.iniField(gl);
         this.programs['env'] = this.iniEnv(gl);
         this.programs['phong'] = this.iniBasic(gl);
+        // 全局设置
         gl.viewport(0, 0, canvas.width, canvas.height);
         gl.enable(gl.DEPTH_TEST);
         gl.cullFace(gl.FRONT);
@@ -225,7 +228,7 @@ class GLobjRoot {
         gl.uniform.u_pointoliteNum = '0';
         gl.uniform.u_sampler = '0';
         // 着色器配置
-        drawProgram.draw = ({mesh, material, translation}) => {
+        drawProgram.draw = ({ mesh, material, translation }) => {
             gl.useProg(drawProgram);
             gl.uniform.translation = translation;
             gl.uniform.n_translation = inverseMat4(transposeMat4(translation));
@@ -354,7 +357,7 @@ class GLobjRoot {
         gl.uniform.camera = GLobj.I;
         gl.uniform.u_environment = '0';
         // 着色器配置
-        envProgram.draw = ({mesh, material, translation}) => {
+        envProgram.draw = ({ mesh, material, translation }) => {
             gl.useProg(envProgram);
             gl.uniform.translation = translation;
             gl.uniform.n_translation = inverseMat4(transposeMat4(translation));
@@ -394,8 +397,116 @@ class GLobjRoot {
         };
         return envProgram;
     }
-    iniTextureField(gl) {
-        
+    // 只有线 适用于无material的物体
+    iniLine(gl) {
+        const vsSource = `precision mediump float;
+            attribute vec4 a_position;
+            attribute vec3 a_color;
+
+            uniform mat4 translation;
+            uniform mat4 camera;    // 统一配置
+
+            varying vec3 v_color;
+
+            void main() {
+                gl_Position = camera*translation*a_position;
+                v_color = a_color;
+            }
+        `;
+        const fsSource = `precision mediump float;
+            varying vec3 v_color;
+
+            void main() {
+                gl_FragColor = vec4(v_color, 1.0);  // 设置线框颜色
+            }
+        `;
+        const lineProgram = gl.iniProgram(vsSource, fsSource);
+        // 初值
+        gl.useProg(lineProgram);
+        gl.uniform.camera = GLobj.I;
+        // 着色器配置
+        lineProgram.draw = ({ mesh, translation }) => {
+            gl.useProg(lineProgram);
+            gl.uniform.translation = translation;
+            // 顶点位置绑定 xyz
+            gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vertexBuffer);
+            gl.vertexAttribPointer(
+                gl.attribute.a_position,
+                3, gl.FLOAT, false,
+                0, 0
+            ); gl.enableVertexAttribArray(gl.attribute.a_position);
+            // 颜色的绑定 rgb
+            if (mesh.colorBuffer) {
+                gl.bindBuffer(gl.ARRAY_BUFFER, mesh.colorBuffer);
+                gl.vertexAttribPointer(
+                    gl.attribute.a_color,
+                    3, gl.FLOAT, false,
+                    0, 0
+                ); gl.enableVertexAttribArray(gl.attribute.a_color);
+            } else {
+                gl.disableVertexAttribArray(gl.attribute.a_color);
+            }
+            // 序号绑定
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.indexBuffer);
+            // 这两个属性要求绑定在mesh.indexBuffer上！！
+            gl.drawElements(gl.LINE_STRIP, mesh.indexBuffer.length, mesh.indexBuffer.type, 0);
+        };
+        return lineProgram;
+    }
+    // 纹理场效果
+    iniField(gl) {
+        const vsSource = `precision mediump float;
+            attribute vec4 a_position;
+
+            uniform mat4 translation;
+            uniform mat4 camera;    // 统一配置
+            uniform bool u_fix;
+            
+            varying vec4 v_position;
+            void main() {
+                vec4 world_position = translation*a_position;
+                gl_Position = camera*world_position;
+                if (u_fix) {v_position = world_position;}
+                else {v_position = gl_Position;}
+            }
+        `;
+        const fsSource = `precision mediump float;
+            uniform vec4 u_Uplane;
+            uniform vec4 u_Vplane;
+            uniform sampler2D u_texture;
+            varying vec4 v_position;
+            void main() {
+                float u = dot(u_Uplane, v_position);
+                float v = dot(u_Vplane, v_position);
+                gl_FragColor = texture2D(u_texture, vec2(u, v));
+            }
+        `;
+        const tfProgram = gl.iniProgram(vsSource, fsSource);
+        // 初值
+        gl.useProg(tfProgram);
+        gl.uniform.camera = GLobj.I;
+        gl.uniform.u_texture = '0';
+        // 着色器配置
+        tfProgram.draw = ({ mesh, material, translation }) => {
+            gl.useProg(tfProgram);
+            gl.uniform.translation = translation;
+            gl.uniform.u_Uplane = material.Uplane;
+            gl.uniform.u_Vplane = material.Vplane;
+            gl.uniform.u_fix = material.fix;
+            gl.bindTexture(gl.TEXTURE_2D, material.texture);
+            // 顶点位置绑定 xyz
+            gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vertexBuffer);
+            gl.vertexAttribPointer(
+                gl.attribute.a_position,
+                3, gl.FLOAT, false,
+                0, 0
+            ); gl.enableVertexAttribArray(gl.attribute.a_position);
+            // 序号绑定
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.indexBuffer);
+            // 这两个属性要求绑定在mesh.indexBuffer上！！
+            gl.drawElements(gl.TRIANGLES, mesh.indexBuffer.length, mesh.indexBuffer.type, 0);
+        };
+        return tfProgram;
     }
     //========光照管理=========//
     // 设计理念时光源不常动，因此在添加、删除时更新
@@ -445,6 +556,10 @@ class GLobjRoot {
         const camera = MultiMat4(cameraP, cameraL);
 
         // 准备着色器
+        g.useProg(this.programs['line']);
+        g.uniform.camera = camera;
+        g.useProg(this.programs['field']);
+        g.uniform.camera = camera;
         g.useProg(this.programs['env']);
         g.uniform.camera = camera;
         g.uniform.u_cameraPosition = this.camera.position;
@@ -527,7 +642,7 @@ class GLobjRoot {
         this.children[name] = child;
         const addProgram = (parent) => {
             // 赋予着色器
-            this.setMaterialProgram(parent.material);
+            if (parent.mesh) parent.material = this.setMaterialProgram(parent.material);
             // 递归
             for (let c in parent.children) addProgram(parent.children[c]);
         }
@@ -540,8 +655,13 @@ class GLobjRoot {
      * @returns {PhongMaterial | EnvMaterial} 配置好着色器的material
      */
     setMaterialProgram(material) {
-        if(material instanceof PhongMaterial) material.program = this.programs['phong'];
-        else if(material instanceof EnvMaterial) material.program = this.programs['env'];
+        if (material instanceof PhongMaterial) material.program = this.programs['phong'];
+        else if (material instanceof EnvMaterial) material.program = this.programs['env'];
+        else if (material instanceof TextureFieldMaterial) material.program = this.programs['field'];
+        else {
+            console.log("no material attached. Use default");
+            return { program: this.programs['line'] };
+        }
         return material;
     }
     /**

@@ -11,7 +11,7 @@ class PhongMaterial {
         this.reflect = new Float32Array([specular, diffusion, ambient < 0 ? 0.25 : ambient, shininess]);
         this.color = new Float32Array([color[0], color[1], color[2], color[3]]);
         this.texture = null;
-        this.program = null;    // 由GLobjRoot.addChild赋值
+        this.program = null;    // 由GLobjRoot.setMaterialProgram赋值 addChild时自动赋值
     }
     static Image2Texture(gl, image) {
         // 由于图片(包括画布)的原点在左上角，所以读取图片要翻转
@@ -46,6 +46,22 @@ class EnvMaterial {
         this.texture = texture;
         this.color = new Float32Array([color[0], color[1], color[2], color[3]]);
         this.roughness = roughness;
-        this.program = null;    // 由GLobjRoot.addChild赋值
+        this.program = null;    // 由GLobjRoot.setMaterialProgram赋值
+    }
+}
+
+class TextureFieldMaterial {
+    /**
+     * 创建平面纹理场映射材质
+     * @param {WebGLTexture} texture 
+     * @param {Array[4]} Uplane 
+     * @param {Array[4]} Vplane 
+     */
+    constructor(texture, Uplane, Vplane, fix = false) {
+        this.texture = texture;
+        this.Uplane = new Float32Array([Uplane[0], Uplane[1], Uplane[2], Uplane[3]]);
+        this.Vplane = new Float32Array([Vplane[0], Vplane[1], Vplane[2], Vplane[3]]);
+        this.fix = fix ? '1': '0';
+        this.program = null;    // 由GLobjRoot.setMaterialProgram赋值
     }
 }
