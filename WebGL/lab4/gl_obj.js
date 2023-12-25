@@ -394,6 +394,9 @@ class GLobjRoot {
         };
         return envProgram;
     }
+    iniTextureField(gl) {
+        
+    }
     //========光照管理=========//
     // 设计理念时光源不常动，因此在添加、删除时更新
     // 为每个点光源维护了一个id，用于某个光源需要移动，只更新这一个光源

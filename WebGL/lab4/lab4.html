@@ -22,6 +22,10 @@
             img.src = url;
         });
     }
+    function getCurrentBase() {
+        var parts = window.location.href.split('/');
+        return parts.slice(0, parts.length - 2).join('/');
+    }
 </script>
 <style>
     body {
@@ -41,17 +45,17 @@
     const CANVAS = document.getElementById('glcanvas');
     GLroot.iniGL(CANVAS, 2000);
     const camera = GLroot.camera;
-    const PORT = 5501;
+    const rootURL = getCurrentBase();
 </script>
 <script>
     // 添加天空盒
     GLroot.setSkyBoxFromUrl({
-        nx: `http://127.0.0.1:${PORT}/lab4/skybox/cartoon/nx.png`,
-        ny: `http://127.0.0.1:${PORT}/lab4/skybox/cartoon/ny.png`,
-        nz: `http://127.0.0.1:${PORT}/lab4/skybox/cartoon/nz.png`,
-        px: `http://127.0.0.1:${PORT}/lab4/skybox/cartoon/px.png`,
-        py: `http://127.0.0.1:${PORT}/lab4/skybox/cartoon/py.png`,
-        pz: `http://127.0.0.1:${PORT}/lab4/skybox/cartoon/pz.png`,
+        nx: `${rootURL}/lab4/skybox/cartoon/nx.png`,
+        ny: `${rootURL}/lab4/skybox/cartoon/ny.png`,
+        nz: `${rootURL}/lab4/skybox/cartoon/nz.png`,
+        px: `${rootURL}/lab4/skybox/cartoon/px.png`,
+        py: `${rootURL}/lab4/skybox/cartoon/py.png`,
+        pz: `${rootURL}/lab4/skybox/cartoon/pz.png`,
     }).then(() => {
         GLroot.addChild('环境贴图', new GLobj(
             GLobj.translation(-5, 0.5, 6),
@@ -106,10 +110,10 @@
     //     new PhongMaterial(0.01, 0.2, -1, 5, [0.3, 0.3, 0.3, 1]),
     //     GLobj.scale(100, 0.01, 100)
     // ));
-    GLobj.fromObj(GLroot.gl, `http://127.0.0.1:${PORT}/lab4/安柏.obj`).then(o => {
+    GLobj.fromObj(GLroot.gl, `${rootURL}/lab4/安柏.obj`).then(o => {
         GLroot.addChild('安柏', o);
     });
-    loadImg(`http://127.0.0.1:${PORT}/lab4/Texture/衣服.png`).then((img) => {
+    loadImg(`${rootURL}/lab4/Texture/衣服.png`).then((img) => {
         GLroot.addChild('贴图', new GLobj(
             GLobj.translation(-2, 3, -2),
             GLobj.rotation(0),
