@@ -45,7 +45,10 @@
     const CANVAS = document.getElementById('glcanvas');
     GLroot.iniGL(CANVAS, 2000);
     const camera = GLroot.camera;
-    const rootURL = getCurrentBase();
+    let rootURL = getCurrentBase();
+    if (rootURL.startsWith('http://htmlpreview.github.io/?')) {
+        rootURL = rootURL.substring('http://htmlpreview.github.io/?'.length);
+    }
 </script>
 <script>
     // 添加天空盒
