@@ -1,7 +1,7 @@
 # codeRoad
 个人零碎简单的代码练习以及笔记
 
-## C++项目
+## C++/C项目
 - MidiReader：播放midi文件
 - 俄罗斯方块
 - 贪吃蛇
@@ -10,6 +10,7 @@
 - 加密解密（python联合编程）
 - 矩阵：分数矩阵类
 - Steins_WallPaper（辉光管时钟桌面）
+- STM32_OV7670_ST7735：用stm32F407驱动OV7670(with FIFO)摄像头，和ST7735屏幕。内含图像库
 
 ## html/js项目
 - boomchess：爆炸棋
