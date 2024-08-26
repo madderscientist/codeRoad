@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFT</title>
+    <script src="./fft_utils.js"></script>
+    <script src="./fft_r.js"></script>
+</head>
+
+<body>
+    <canvas id="spectrum" width="200px" height="200px"></canvas>
+</body>
+<script>
+    // 测试FFT代码
+    var canvas = document.getElementById('spectrum');
+    var ctx = canvas.getContext('2d');
+    function drawSpectrum(data) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.beginPath();
+        var width = canvas.width / data.length;
+        for (var i = 0; i < data.length; i++) {
+            var x = i * width;
+            var height = 8 * data[i] / 256 * canvas.height;
+            ctx.moveTo(x, canvas.height);
+            ctx.lineTo(x, canvas.height - height);
+            ctx.arc(x, canvas.height - height, 2, 0, 2 * Math.PI);
+        }
+        ctx.strokeStyle = 'rgb(0,255,0)';
+        ctx.stroke();
+    }
+    function testCos(N = 32) {
+        var test = new Float32Array(Array.from({ length: N }, (_, i) => 2 * Math.cos(2 * Math.PI * 0.0625 * i)));
+        // var test = new Float32Array([1,2,3,4,3,2,1,0]);
+        let data = fft(test, new Float32Array(N), N);
+        let A = ComplexAbs(data[0], data[1]);
+        drawSpectrum(A);
+    }
+    function testCos2(N = 32) {
+        var test = new Float32Array(Array.from({ length: N }, (_, i) => 2 * Math.cos(2 * Math.PI * 0.0625 * i)));
+        // var test = new Float32Array([1,2,3,4,3,2,1,0]);
+        let data = fftR(test, N);
+        let A = ComplexAbs(data[0], data[1]);
+        A = [...A, ...A.reverse()];
+        drawSpectrum(A);
+        console.log(data)
+    }
+    function testTri(N = 32) {
+        var test = new Float32Array([0,1,2,3,4,3,2,1]);
+        let data = fft(test, new Float32Array(N), N);
+        let A = ComplexAbs(data[0], data[1]);
+        drawSpectrum(A);
+    }
+    // testTri(32);
+    // var N = 4096;
+    // var test = new Float32Array(Array.from({ length: N }, (_, i) => 2 * Math.cos(2 * Math.PI * 0.0625 * i)));
+    // var test2 = new Float32Array(N);
+    // console.time("originFFT");
+    // for (let i = 0; i < 2000; i++) {
+    //     fft(test, test2, N);
+    // }
+    // console.timeEnd("originFFT");
+    // console.time("realFFT");
+    // for (let i = 0; i < 2000; i++) {
+    //     fftR(test, N);
+    // }
+    // console.timeEnd("realFFT");
+
+    function testreal(N = 8192) {
+        var test = new Float32Array([0,1,2,3,4,3,2,1]);
+        console.time("real");
+        for(let i=0;i<5000;i++) fftR(test, N);
+        console.timeEnd("real");
+    }
+    // testreal();
+    function testTime(N = 8192) {
+        var test = new Float32Array([0,1,2,3,4,3,2,1]);
+        var test2 = new Float32Array(1);
+        console.time("rec");
+        for(let i=0;i<10000;i++) fft(test, test2, N);
+        console.timeEnd("rec");
+    }
+    testTime();
+</script>
+
+</html>

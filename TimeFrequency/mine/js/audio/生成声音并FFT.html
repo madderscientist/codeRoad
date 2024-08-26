@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <button onclick="btn()"></button>
+    <canvas id="canvas"></canvas>
+</body>
+<script>
+    /** @type {HTMLCanvasElement} */
+    var canvas = document.getElementById('canvas');
+    var ctx = canvas.getContext('2d');
+    const w = 2048;
+    const h = 300;
+    canvas.width = w;
+    canvas.height = h;
+
+    var audioCtx = null;
+    var myAudioBuffer = null;
+    var source = null;
+    var analyser = null;
+    var fft = null;
+    var clk = null;
+    function createSource() {
+        audioCtx = new AudioContext();
+        myAudioBuffer = audioCtx.createBuffer(1, 2048 * 100, audioCtx.sampleRate);
+        var newBuffering = myAudioBuffer.getChannelData(0);
+
+        let T = parseInt(audioCtx.sampleRate / 220);
+        for (let i = 0; i < newBuffering.length; i++) {
+            // newBuffering[i] = (i % T > T / 2) ? 1 : -1;
+            newBuffering[i] = Math.cos(6.283 / T * i)
+        }
+
+        source = audioCtx.createBufferSource();
+        source.buffer = myAudioBuffer;
+        analyser = audioCtx.createAnalyser();
+        analyser.smoothingTimeConstant = 0;
+        source.connect(analyser);
+        analyser.connect(audioCtx.destination);
+    }
+    function visual() {
+        fft = new Uint8Array(analyser.frequencyBinCount);
+        analyser.getByteFrequencyData(fft);
+        draw(fft);
+        console.log(audioCtx.currentTime);
+    }
+    var a;
+    function btn(x) {
+        createSource();
+        source.start();
+        setTimeout(() => {
+            //visual();
+            audioCtx.suspend()
+            // source.stop();
+            // visual();
+            setTimeout(visual,20);
+        }, 1000)
+        // clk = setInterval(visual,300);
+        // source.onended = () => {
+        //     clearInterval(clk);
+        // }
+    }
+    function draw(d) {
+        ctx.clearRect(0, 0, 800, 500);
+        ctx.beginPath();
+        let ww = parseInt(w / 1024);
+        ctx.moveTo(0, 0);
+        let near = -1;
+        for (let i = 0; i < d.length; i++, near--) {
+            ctx.lineTo(i * ww, d[i]);
+            if (d[i] > 100 && near < 0) {
+                ctx.strokeText(`${(i + 2) * audioCtx.sampleRate / analyser.fftSize}`, (i + 2) * ww, 250);
+                near = 20;
+            }
+        }
+        ctx.stroke();
+    }
+    function equal(a, b) {
+        for (let i = 0; i < a.length; i++) {
+            if (a[i] != b[i]) return false;
+        }
+        return true;
+    }
+</script>
+
+</html>
