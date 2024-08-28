@@ -1,3 +1,5 @@
+// 基于降采样的CQT
+
 function filter(input, num, den, output = undefined, reverse = false) {
     const len = input.length;
     const order = Math.max(num.length, den.length);
