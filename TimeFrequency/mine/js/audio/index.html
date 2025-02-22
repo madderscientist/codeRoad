@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="compatible.js"></script>
-    <title>AudioLab</title>
+    <title>AudioLab - 实时FFT</title>
 </head>
 <style>
     canvas {
@@ -20,7 +20,7 @@
 </body>
 <script>
     const WIDTH = 2100;
-    const HEIGHT = 260;
+    const HEIGHT = 500;
     const FFTSIZE = 4096;   // max 32768
     const bufferLength = FFTSIZE / 2;
     const barWidth = WIDTH / bufferLength;
