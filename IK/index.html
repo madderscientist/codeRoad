@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="./ik.js"></script>
+    <title>蜈蚣！</title>
+</head>
+<body>
+    <canvas id="c" width="800px" height="800px"></canvas>
+</body>
+<script>
+    const canvas = document.getElementById('c');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const ctx = canvas.getContext('2d');
+
+    // 创建蜈蚣
+    const leg_length = 40;
+    const body_length = 25;
+    const body_num = 40;
+
+    const head = new Body(null, canvas.width/2, canvas.height/2, true);
+    let _body = new Body(head, body_length, 0, false);
+    for (let i = 0; i < body_num; i++) {
+        _body = new Body(_body, body_length, 0, false);
+        const left_leg = new LineNode(null, _body.x - _body.distance / 2, _body.y + _body.distance / 2, true);
+        _body.addFriend(left_leg);
+        const neck_left = new LineNode(left_leg, leg_length, Math.PI/4, false);
+        const foot_left = new LineNode(neck_left, leg_length, 3*Math.PI/4, false);
+        _body.addFoot(foot_left);
+
+        const right_leg = new LineNode(null, _body.x - _body.distance / 2, _body.y - _body.distance / 2, true);
+        _body.addFriend(right_leg);
+        const neck_right = new LineNode(right_leg, leg_length, -Math.PI/4, false);
+        const foot_right = new LineNode(neck_right, leg_length, -3*Math.PI/4, false);
+        _body.addFoot(foot_right);
+    }
+    head.update(ctx);
+
+    let targetX = null;
+    let targetY = null;
+    canvas.addEventListener('mousemove', (event) => {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = event.clientX - rect.left;
+        const mouseY = event.clientY - rect.top;
+        targetX = mouseX;
+        targetY = mouseY;
+    });
+    canvas.addEventListener('touchstart', (event) => {
+        const rect = canvas.getBoundingClientRect();
+        const touch = event.touches[0];
+        const touchX = touch.clientX - rect.left;
+        const touchY = touch.clientY - rect.top;
+        targetX = touchX;
+        targetY = touchY;
+    });
+
+    // 自动游走
+    head.vx = 2;
+    head.vy = 2;
+    head.ax = 0;
+    head.ay = 0;
+    const maxSpeed = 8;
+
+    function randomWalk() {
+        let speed_now = Math.sqrt(head.vx * head.vx + head.vy * head.vy);
+        speed_now = Math.max(speed_now * 0.2, 0.3); // 加速度倍率
+
+        // 追随目标
+        if (targetX !== null) {
+            const dx = targetX - head.x;
+            const dy = targetY - head.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance < body_length * 2) {
+                targetX = null;
+            } else {
+                // 随机干扰 模拟狗在嗅 而且能显得急躁
+                head.ax = (dx / distance + (Math.random() - 0.5) * 8) * speed_now;
+                head.ay = (dy / distance + (Math.random() - 0.5) * 8) * speed_now;
+            }
+        } else {
+            head.ax = (Math.random() - 0.5) * speed_now;
+            head.ay = (Math.random() - 0.5) * speed_now;
+        }
+
+        head.vx += head.ax;
+        head.vy += head.ay;
+        // 方向限制
+        const speed = Math.sqrt(head.vx * head.vx + head.vy * head.vy);
+        const [c, s] = head.son.angle2(head);
+        if (c * head.vx + s * head.vy < -speed * 0.8) {
+            head.vx *= -1;
+            head.vy *= -1;
+        }
+        // 限速 带有惩罚
+        if (speed > maxSpeed) {
+            const s = speed**1.3;
+            head.vx *= maxSpeed / s;
+            head.vy *= maxSpeed / s;
+        }
+        // 更新位置
+        head.x += head.vx;
+        head.y += head.vy;
+        // 边界反弹
+        if (head.x <= 0 || head.x >= canvas.width) {
+            head.vx *= -0.4;    // 反弹系数为0.4
+            head.x = Math.max(0, Math.min(canvas.width, head.x));
+        }
+        if (head.y <= 0 || head.y >= canvas.height) {
+            head.vy *= -0.4;
+            head.y = Math.max(0, Math.min(canvas.height, head.y));
+        }
+        // 画
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        head.update(ctx);
+
+        requestAnimationFrame(randomWalk);
+    } randomWalk();
+</script>
+</html>
