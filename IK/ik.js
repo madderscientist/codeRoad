@@ -150,7 +150,7 @@ class Body extends LineNode {
             ctx.stroke();
         }
         if (this.father) {
-            ctx.strokeStyle = 'blue';
+            ctx.strokeStyle = 'brown';
             ctx.lineWidth = 2;
             const halfSide = this.distance / 2;
             const [c, s] = this.angle2();

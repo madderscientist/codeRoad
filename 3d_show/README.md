@@ -2,7 +2,7 @@
 
 - 创建时间：2022年3月5日，9:12:43
 - 目的：初探计算机图形学，尝试使用线性代数的知识解决问题
-- 使用：http://htmlpreview.github.io/?https://github.com/madderscientist/codeRoad/blob/main/3d_show/3d.html
+- 使用：https://madderscientist.github.io/codeRoad/3d_show/3d.html
 - 成果：**浏览器全屏显示**、鼠标移动跟踪怎么做
 
 ## 补点数学

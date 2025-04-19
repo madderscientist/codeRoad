@@ -4,6 +4,6 @@ html前端版，没有机只能人人对战<br>
 
 - 创建时间：2022年1月18日，15:18:57
 - 目的：手机上也要能玩黑白棋。
-- 使用：http://htmlpreview.github.io/?https://github.com/madderscientist/codeRoad/blob/main/Reversi/bwc.html
+- 使用：https://madderscientist.github.io/codeRoad/Reversi/bwc.html
 
 发现html可视化图形化很容易。

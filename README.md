@@ -22,6 +22,7 @@
 - 3d_show：尝试画出三维
 - matrixDet：求大矩阵的行列式
 - WebGL：计算机图形学实验
+- IK：反向动力学蜈蚣
 
 ## python项目
 - rasterAnimation：光栅动画原理
