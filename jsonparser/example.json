@@ -1,0 +1,23 @@
+/*
+    一个不规范的JSON文件：缩进混乱、多行文本、注释、尾随逗号
+    但本实现都可以读取并且转换为标准JSON格式
+*/
+{"name": "LiHua",
+    "gender": true,
+    "age": 18, "mate": null,    // 没有女朋友
+"family": [2, {    "relation": "father",
+"name": "LiMing",
+            "age": 45
+    }, {
+        "relation":"mother",
+            "name": "WangMei",      "age": 43  ,
+            "education": [
+      "Southeast\tU\tniversity","Nanjing\nUniversity"]
+        }
+    ], "hobbies": ["reading", "swimming", "coding",], "description": "LiHua is a student who loves to read and swim. \
+    He is also interested in coding and technology.\n\
+    He is preparing for the college entrance examination and works hard every day.\n\
+        Influenced by his mother, his dream is to be admitted to Southeast University \
+        and have a girlfriend from Nanjing University.\
+        ",
+  }

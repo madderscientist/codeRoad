@@ -1,0 +1,29 @@
+{
+	"name": "LiHua",
+	"gender": true,
+	"age": 18,
+	"mate": null,
+	"family": [
+		2,
+		{
+			"relation": "father",
+			"name": "LiMing",
+			"age": 45
+		},
+		{
+			"relation": "mother",
+			"name": "WangMei",
+			"age": 43,
+			"education": [
+				"Southeast\tU\tniversity",
+				"Nanjing\nUniversity"
+			]
+		}
+	],
+	"hobbies": [
+		"reading",
+		"swimming",
+		"coding"
+	],
+	"description": "LiHua is a student who loves to read and swim. He is also interested in coding and technology.\nHe is preparing for the college entrance examination and works hard every day.\nInfluenced by his mother, his dream is to be admitted to Southeast University and have a girlfriend from Nanjing University."
+}

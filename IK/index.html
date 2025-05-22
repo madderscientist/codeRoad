@@ -6,6 +6,16 @@
     <script src="./ik.js"></script>
     <title>蜈蚣！</title>
 </head>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    body {
+        overflow: hidden;
+    }
+</style>
 <body>
     <canvas id="c" width="800px" height="800px"></canvas>
 </body>
@@ -18,7 +28,7 @@
     // 创建蜈蚣
     const leg_length = 20;
     const body_length = 25;
-    const body_num = 40;
+    const body_num = 50;
     const leg_num = 3;
 
     const head = new Body(null, canvas.width/2, canvas.height/2, true);
