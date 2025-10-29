@@ -9,12 +9,14 @@
                 "args": [
                     "--bind",       // 使用embind
                     "--no-entry",   // 解决报错: undefined symbol: main
-                    "${workspaceFolder}\\cpp\\cqt_wasm.cpp",
+                    "${workspaceFolder}\\cqt_wasm.cpp",
                     "-o",
-                    "${workspaceFolder}\\wasm\\cqt.wasm.js",    // 很多依赖，自己写是不太可能的
+                    "${workspaceFolder}\\cqt.wasm.js",    // 很多依赖，自己写是不太可能的
                     "-O3",
                     "-s",
-                    "WASM=1"
+                    "WASM=1",
+                    "-s",
+                    "ALLOW_MEMORY_GROWTH=1",    // 不加就OOM
                 ]
             },
             "problemMatcher": []
