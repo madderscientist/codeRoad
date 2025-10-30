@@ -191,6 +191,8 @@ ResultTriple heuristicSearch(const Puzzle& initPuzzle, const Puzzle& tgtPuzzle, 
         for (const Direction& action : currentPuzzle.nextActionList) {
             Puzzle nextPuzzleNode = currentPuzzle.moveTo(action);
             nextPuzzleNode.precedeActionList.push_back(action);
+            // 一般情况下应该在取出来的时候判断，而不是这里
+            // 由于最终结果是depth，所以可以在遍历动作时判断是否为目标状态，不会影响最优性
             if (nextPuzzleNode == tgtPuzzle) {
                 for (int i = 0; i < nextPuzzleNode.precedeActionList.size(); i++) {
                     printAction(nextPuzzleNode.precedeActionList[i], i + 1);
