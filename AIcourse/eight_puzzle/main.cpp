@@ -162,17 +162,21 @@ ResultTriple heuristicSearch(const Puzzle& initPuzzle, const Puzzle& tgtPuzzle, 
     initPuzzle_copy.depth = 0;
     initPuzzle_copy.precedeActionList.clear();
     int expandNodeCount = 0;
-    // 启发式搜索 重载函数是unordered_set要求的
+    // 记录距离，防止反复计算
     struct HeuristicInfo {
         Puzzle puzzle;
         int distance;   // 记录 depth + heuristic
-        // hash
+        // hash unordered_set要求
         size_t operator()(const HeuristicInfo& info) const {
             return info.puzzle.visitedNum();
         }
-        // equal
+        // equal unordered_set要求
         bool operator()(const HeuristicInfo& lhs, const HeuristicInfo& rhs) const {
             return lhs.puzzle == rhs.puzzle;
+        }
+        // min_element要求
+        bool operator<(const HeuristicInfo& other) const {
+            return distance < other.distance;
         }
     };
     // 记录候选和已访问节点 用unordered_set优化性能
@@ -181,10 +185,7 @@ ResultTriple heuristicSearch(const Puzzle& initPuzzle, const Puzzle& tgtPuzzle, 
     int d = heuristic(initPuzzle_copy, tgtPuzzle);
     openSet.insert({std::move(initPuzzle_copy), d});
     while (!openSet.empty()) {
-        HeuristicInfo currentInfo = *min_element(openSet.begin(), openSet.end(),
-            [](const HeuristicInfo& a, const HeuristicInfo& b) {
-                return a.distance < b.distance;
-            });
+        HeuristicInfo currentInfo = *min_element(openSet.begin(), openSet.end());
         Puzzle currentPuzzle = std::move(currentInfo.puzzle);
         openSet.erase(currentInfo);
         // 遍历子节点
@@ -279,7 +280,7 @@ int main() {
     Puzzle initPuzzle;
     Puzzle::randomWalk(20, initPuzzle);
     {
-        cout << "========广度优先搜索========\n";
+        cout << "=========广度优先搜索=========\n";
         ResultTriple result = BreadthFirstSearch(initPuzzle, tgtPuzzle); // 复制一份，防止被修改
         cout << result << "\n\n";
     }
@@ -289,12 +290,12 @@ int main() {
         cout << result << "\n\n";
     }
     {
-        cout << "========启发式搜索1========\n";
+        cout << "=========启发式搜索1=========\n";
         ResultTriple result = heuristicSearchInformedByIncorrectNum(initPuzzle, tgtPuzzle);
         cout << result << "\n\n";
     }
     {
-        cout << "========启发式搜索2========\n";
+        cout << "=========启发式搜索2=========\n";
         ResultTriple result = heuristicSearchInformedByManhattonDis(initPuzzle, tgtPuzzle);
         cout << result << "\n\n";
     }
