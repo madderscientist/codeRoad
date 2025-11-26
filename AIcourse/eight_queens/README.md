@@ -205,4 +205,190 @@ function MIN-CONFLICTS(csp: CSP, max_steps = 10000): CSP | null {
 ```
 
 ## 解题
-给出的模板代码总算像样了（和上一个实验相比）
+给出的模板代码总算像样了（和上一个实验相比）。照着伪代码无脑写就好了。
+
+注意框架返回了诸多`NULL`（竟然不是`nullptr`，这作者有点落后了），别想那么多有没有必要、可不可能，全部加上判断就对了。
+
+```cpp
+std::vector<Queen*> search::backtrack(std::vector<Queen*> assignment, Csp& csp) {
+    /*
+	 * TODO
+	 * Algorithm (Reference: Figure 6.5):
+	 function BACKTRACK(assignment, csp) returns a solution, or failure
+		if assignment is complete then return assignment (use this condition: assignment.size() == csp.variables.size())
+		var<-SELECT-UNASSIGNED-VARIABLE(csp)
+		for each value in ORDER-DOMAIN-VALUES(var, assignment, csp) do
+			record csp state # csp.recode() require two variables, you need to create two local variables to store the state
+			if value is consistent with assignment then
+				assign value to var	# use var->assign(value)
+				add var to assignment
+				inferences<-INFERENCE(csp, var, value)	# use makeInference function here
+				if inferences != failure then
+					add inferences to assignment
+					result<-BACKTRACK(assignment, csp)
+					if result != failure then
+						return result
+			recover csp state (csp.recover)
+			remove {var = value} and inferences from assignment # use refresh(assignment)
+		return failure
+	 */
+	if (assignment.size() == csp.variables.size()) return assignment;
+	auto var = search::selectUnassignedVariable(csp);
+	auto domain = search::orderDomainValues(var, assignment, csp);
+	for (auto value : domain) {
+		std::vector<Position> lastPositions;
+		std::vector<std::vector<Position>> lastDomains;
+		csp.record(lastPositions, lastDomains);
+		if (csp.consistent(value, assignment)) {
+			var->assign(value);
+			assignment.push_back(var);
+			auto inference = search::makeInference(csp, var, value);
+			if (!failed(inference)) {
+				for (auto v : inference) assignment.push_back(v);
+				auto result = search::backtrack(assignment, csp);
+				if (!failed(result)) return result;	// 成功！
+			}
+		}
+		// 恢复现场只要这两行即可：
+		// csp.recover会将变量的赋值撤销，而assignment里面保存的是变量的指针
+		// 所以csp.recover后，push_back到assignment里面的变量都会复原成未赋值，然后被refresh函数删除
+		csp.recover(lastPositions, lastDomains);
+		search::refresh(assignment);    // refresh删除的是没有赋值的变量
+	}
+    return std::vector<Queen*>({NULL});
+}
+```
+
+```cpp
+std::vector<Queen*> search::minConflict(Csp& csp, int maxSteps) {
+    /*
+	 * TODO
+	 * Algorithm (Reference: Figure 6.8):
+	 function MIN-CONFLICTS(csp,max steps) returns a solution or failure
+		inputs: csp, a constraint satisfaction problem
+				max steps, the number of steps allowed before giving up
+		current<-an initial complete assignment for csp	
+		for i = 1 to max steps do
+			if current is a solution for csp then # use isSolution
+				print how many steps used here
+				return current 
+			var <- a randomly chosen conflicted variable from csp.VARIABLES # use chooseConflictVariable
+			value <- the value v for var that minimizes CONFLICTS(var, v, current , csp) # use getMinConflictValue
+			set var =value in current	# use var->position = value
+		return failure
+	 */
+	std::vector<Queen*>& current = csp.variables;
+	for (int i = 0; i < maxSteps; i++) {
+		if (isSolution(csp, current)) {
+			std::cout << "Success at step " << i << '\n';
+			return current;
+		}
+		Queen* var = chooseConflictVariable(csp);
+		// 其实var必找到，因为已经不是Solution了 但是为了鲁棒性还是加一句判断
+		if (var == NULL) return current;	// 没有找到冲突，说明符合要求
+		// 找冲突最小的
+		auto value = getMinConflictValue(csp, var);
+		var->position = value;
+	}
+    return std::vector<Queen*>({NULL});
+}
+```
+
+```cpp
+int search::getConflicts(Csp& csp, Position& position) {
+    /*
+	* TODO
+	* 得到一个position在当前棋盘上的冲突数量
+	* 注意：与position在同一列的queen的冲突不应该计算
+	* 样例：
+	*	0 1 0 0
+		1 0 0 0
+		0 0 1 0
+		0 0 0 1
+	* Position{0, 0}的冲突数应该为3，因为它与{0, 1},{2, 2},{3, 3}冲突
+	* Position{1, 0}的冲突数量应该为1，因为它与{0, 1}冲突
+	*/
+	int conflicts = 0;
+	for (auto q : csp.variables) {
+		// 跳过同一列
+		if (q->position.col == position.col) continue;
+		// 跳过未赋值
+		if (q->position == Position::getUnassigned()) continue;
+		// 有冲突则计数 csp.constraints = relation::conflict
+		if (csp.constraints(q->position, position)) conflicts++;
+	}
+    return conflicts;
+}
+```
+
+```cpp
+Queen* search::chooseConflictVariable(Csp& csp) {
+    /*
+	* TODO
+	* 返回一个目前赋值的冲突数大于0的variable
+	* 注意：冲突数大于0的variable可能有多个，需要随机选择
+	* 样例：
+	*	0 1 0 0
+		1 0 0 0
+		0 0 1 0
+		0 0 0 1
+	* Queen1-4的冲突数都大于0，随机选择一个作为该函数的返回结果
+	*/
+	std::vector<Queen*> conflicted;
+	for (Queen* q : csp.variables) {
+		if (q->position == Position::getUnassigned()) continue;
+		if (getConflicts(csp, q->position)) conflicted.push_back(q);
+	}
+	if (conflicted.empty()) return NULL;
+	return conflicted[std::rand() % conflicted.size()];
+}
+```
+
+```cpp
+Position search::getMinConflictValue(Csp& csp, Queen* var) {
+    /*
+	* TODO
+	* 返回var的domian中，可以使冲突数最小的值
+	* 注意：使冲突数最小的值可能有多个，需要随机选择，如果不随机选择问题可能会陷入局部稳定点并且该稳定点不是解
+	* 样例：
+	*	1 1 0 0
+		0 0 0 0
+		0 0 1 0
+		0 0 0 1
+	* Queen1所在的位置的冲突数为3，它的domain为{[0-3], 0}。{1, 0},{2, 0},{3, 0}的冲突数都为1。
+	* 需要从中随机选取一个作为返回值。
+	*/
+	std::vector<Position> minConflicts;
+	int minConflictNum = INT_MAX;
+	for (auto p : var->domain) {
+		int conflicts = getConflicts(csp, p);
+		if (conflicts == minConflictNum) {
+			minConflicts.push_back(p);
+		} else if (conflicts < minConflictNum) {
+			minConflicts.clear();
+			minConflicts.push_back(p);
+			minConflictNum = conflicts;
+		}
+	}
+	// 空则返回无解 但其实不会出现，因为必有比INT_MAX小的
+	if (minConflicts.empty()) return Position::getUnassigned();
+	return minConflicts[std::rand() % minConflicts.size()];
+}
+```
+
+值得注意的是这个框架的AC3算法是错的，有向弧的方向反了。改为如下才是正确的：
+```cpp
+bool inference::revise(Csp& csp, Queen& q1, Queen& q2) {
+    bool revised = false;
+    auto it = q1.domain.begin();
+    while (it != q1.domain.end()) {
+        if (!canSatisfy(csp, *it, q2)) {
+            it = q1.domain.erase(it);
+            revised = true;
+        } else {
+            it++;
+        }
+    }
+    return revised;
+}
+```

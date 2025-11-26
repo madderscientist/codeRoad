@@ -12,6 +12,7 @@
 - Steins_WallPaper（辉光管时钟桌面）
 - STM32_OV7670_ST7735：用stm32F407驱动OV7670(with FIFO)摄像头，和ST7735屏幕。内含图像库
 - jsonparser：当C++助教出的JSON解析器题目
+- AIcourse：当人工智能导论助教的笔记/答案
 
 ## html/js项目
 - boomchess：爆炸棋
