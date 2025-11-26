@@ -234,6 +234,7 @@ std::vector<Queen*> search::backtrack(std::vector<Queen*> assignment, Csp& csp) 
 	 */
 	if (assignment.size() == csp.variables.size()) return assignment;
 	auto var = search::selectUnassignedVariable(csp);
+    if (var == NULL) return std::vector<Queen*>({NULL});	// 实际上并不会出现此情况
 	auto domain = search::orderDomainValues(var, assignment, csp);
 	for (auto value : domain) {
 		std::vector<Position> lastPositions;
