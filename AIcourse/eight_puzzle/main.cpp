@@ -25,7 +25,7 @@ const int MAX_DEPTH = 25;
  * @brief 广度优先搜索
  * @param initialPuzzle 初始状态Puzzle
  * @param tgtPuzzle 目标状态Puzzle
- * @return {是否成功, 步数}
+ * @return {是否成功, 步数, 拓展节点数}
  */
 ResultTriple BreadthFirstSearch(const Puzzle& initPuzzle, const Puzzle& tgtPuzzle) {
     cout << "initial State: " << endl << initPuzzle << endl;
@@ -71,7 +71,7 @@ ResultTriple BreadthFirstSearch(const Puzzle& initPuzzle, const Puzzle& tgtPuzzl
  * @param initPuzzle 初始状态Puzzle
  * @param tgtPuzzle 目标状态Puzzle
  * @param maxDepth 最大深度
- * @return {是否成功, 步数}
+ * @return {是否成功, 步数, 拓展节点数}
  */
 ResultTriple DepthFirstSearch(const Puzzle& initPuzzle, const Puzzle& tgtPuzzle, int maxDepth = MAX_DEPTH) {
     cout << "max depth: " << maxDepth << ", initial State: " << endl << initPuzzle << endl;
@@ -154,7 +154,7 @@ int Heuristic1(const Puzzle& puzzle, const Puzzle& tgtPuzzle) {
  * @param initPuzzle 初始状态Puzzle
  * @param tgtPuzzle 目标状态Puzzle
  * @param heuristic 启发式函数指针
- * @return {是否成功, 步数}
+ * @return {是否成功, 步数, 拓展节点数}
  */
 ResultTriple heuristicSearch(const Puzzle& initPuzzle, const Puzzle& tgtPuzzle, int (*heuristic)(const Puzzle&, const Puzzle&) = Heuristic1) {
     cout << "initial State: " << endl << initPuzzle << endl;
@@ -186,7 +186,7 @@ ResultTriple heuristicSearch(const Puzzle& initPuzzle, const Puzzle& tgtPuzzle, 
     openSet.insert({std::move(initPuzzle_copy), d});
     while (!openSet.empty()) {
         HeuristicInfo currentInfo = *min_element(openSet.begin(), openSet.end());
-        Puzzle currentPuzzle = std::move(currentInfo.puzzle);
+        const Puzzle& currentPuzzle = currentInfo.puzzle;
         openSet.erase(currentInfo);
         // 遍历子节点
         for (const Direction& action : currentPuzzle.nextActionList) {
@@ -230,7 +230,7 @@ ResultTriple heuristicSearch(const Puzzle& initPuzzle, const Puzzle& tgtPuzzle, 
  * @param initPuzzle 初始状态Puzzle
  * @param tgtPuzzle 目标状态Puzzle
  * @param heuristic 启发式函数指针
- * @return {是否成功, 步数}
+ * @return {是否成功, 步数, 拓展节点数}
  */
 ResultTriple heuristicSearchInformedByIncorrectNum(const Puzzle& initPuzzle, const Puzzle& tgtPuzzle) {
     /*
@@ -266,7 +266,7 @@ int Heuristic2(const Puzzle& puzzle, const Puzzle& tgtPuzzle) {
  * @brief 启发式搜索2，启发式函数采用到目标位置的曼哈顿距离
  * @param initPuzzle 初始状态Puzzle
  * @param tgtPuzzle 目标状态Puzzle
- * @return {是否成功, 步数}
+ * @return {是否成功, 步数, 拓展节点数}
  */
 ResultTriple heuristicSearchInformedByManhattonDis(const Puzzle& initPuzzle, const Puzzle& tgtPuzzle) {
     /*
@@ -281,7 +281,7 @@ int main() {
     Puzzle::randomWalk(20, initPuzzle);
     {
         cout << "=========广度优先搜索=========\n";
-        ResultTriple result = BreadthFirstSearch(initPuzzle, tgtPuzzle); // 复制一份，防止被修改
+        ResultTriple result = BreadthFirstSearch(initPuzzle, tgtPuzzle);
         cout << result << "\n\n";
     }
     {
