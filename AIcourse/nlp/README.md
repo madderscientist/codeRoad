@@ -156,12 +156,21 @@ main.cpp
 
 using namespace std;
 
+void parsing_test(Nlp& nlp, string sentence) {
+    TreeNode* root = nlp.parse(sentence);
+    util::print_tree(root, 0);
+    util::print_tree_linear(root, 0);
+}
+
 bool judge_one(Nlp& nlp, string& sentence, string& ans) {
     string result;
     TreeNode* root = nlp.parse(sentence);
     util::get_tree_linear(root, 0, result);
     bool right = result == ans;
     delete root;
+    if (!right) {
+        cout << result << "\n";
+    }
     return right;
 }
 
@@ -173,10 +182,13 @@ void judge(Nlp& nlp) {
     string s3 = "the agent feels the breeze on 0 8";
     string result3 = "[S:[NP:[Article: the][Noun: agent]][VP:[VP:[VP:[Verb: feels]][NP:[Article: the][Noun: breeze]]][PP:[Prep: on][NP:[Digit: 0][Digit: 8]]]]]";
     int rightNumber = 0;
-    if (judge_one(nlp, s1, result1)) rightNumber++;
-    if (judge_one(nlp, s2, result2)) rightNumber++;
-    if (judge_one(nlp, s3, result3)) rightNumber++;
-    cout << rightNumber;
+    if (judge_one(nlp, s1, result1)) rightNumber |= 1;
+    if (judge_one(nlp, s2, result2)) rightNumber |= 2;
+    if (judge_one(nlp, s3, result3)) rightNumber |= 4;
+    cout << ((rightNumber & 1) ? '1' : '0');
+    cout << ((rightNumber & 2) ? '1' : '0');
+    cout << ((rightNumber & 4) ? '1' : '0');
+    cout << endl;
 }
 
 int main() {
