@@ -52,9 +52,8 @@ void solve() {
     int dp[maxTime+1]{0};
     for (int i = 0; i < N; i++) {
         const e& event = events[i];
+        int use_i = dp[event.begin] + event.w;
         for (int j = maxTime; j >= event.end; j--) {
-            int no_i = dp[j];
-            int use_i = dp[event.begin] + event.w;
             dp[j] = max(dp[j], use_i);
         }
     }
