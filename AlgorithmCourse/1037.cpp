@@ -4,6 +4,7 @@ using namespace std;
 char match[50]; // 女嘉宾被谁牵手 为-1则无人
 int* like[50];
 
+// 匈牙利
 bool findWay(int man, bool* hasman) {
     int* Ilike = like[man];
     for (int i = Ilike[0]; i > 0; i--) {

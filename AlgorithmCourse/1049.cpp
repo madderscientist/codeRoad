@@ -4,6 +4,7 @@
 #include <cmath>
 
 using namespace std;
+const double opt_v = 13.98951925;
 
 struct sensor {
     double l;
@@ -29,7 +30,7 @@ void solve() {
     int seqNum = seq.size() - 1;
     // 每个区间的速度
     double v[seqNum];
-    for (int i = 0; i < seqNum; i++) v[i] = 13.98951925;
+    for (int i = 0; i < seqNum; i++) v[i] = opt_v;
 
     for (int seqLen = 1; seqLen <= seqNum; seqLen++) {
         for (int i = 0; i <= seqNum - seqLen; i++) {
@@ -61,7 +62,7 @@ void solve() {
                         dis2 -= temp_dis;
                     }
                 }
-                if (t2 < 1e-9) break;
+                if (t2 < 1e-7) break;
                 double v2 = dis2 / t2;
                 if (v2 == v_max) break;
                 v_max = v2;

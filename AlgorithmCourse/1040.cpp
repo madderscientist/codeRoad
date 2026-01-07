@@ -22,3 +22,5 @@ int main() {
     scanf("%d", &t);
     while (t--) solve();
 }
+
+// 正规的方式是从右上角开始遍历

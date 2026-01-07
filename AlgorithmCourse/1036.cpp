@@ -1,6 +1,6 @@
 #include <bits/stdc++.h>
 using namespace std;
-
+//KMP
 void solve() {
     int n, m;
     cin >> n >> m;

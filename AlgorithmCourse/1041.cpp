@@ -8,6 +8,8 @@ int min(int a, int b) {
     return a < b ? a : b;
 }
 
+// 这是O(m+n)的解法
+// 正规解法应该用二分做
 void solve() {
     int m, n;
     scanf("%d%d", &m, &n);
