@@ -1,0 +1,67 @@
+<mujoco model="cartpole">
+    <compiler angle="radian" />
+    <!-- 设置仿真的时间步长为 0.01 秒 -->
+    <option timestep="0.01" >
+        <!-- 单独开一个 flag 标签，把 contact 设为 "disable" -->
+        <!-- 此元素用于设置启用和禁用仿真流程不同部分的标志。运行时实际使用的标志表示为两个整数的位，即 mjModel.opt.disableflags 和 mjModel.opt.enableflags，分别用于禁用标准功能和启用可选功能。 -->
+        <!-- 但是mjlab会将该场景里的物体放到另一个场景，因此这里的定义是无效的 https://github.com/mujocolab/mjlab/issues/885 -->
+        <flag contact="disable" />
+    </option>
+    <!--
+      定义了一些默认参数
+      class="pole" 下面的内容会自动应用到 pole 相关的 body/geom/joint 上，减少重复代码
+    -->
+    <default>
+        <default class="pole">
+            <joint type="hinge" axis="0 1 0" damping="2e-6" limited="false" />
+            <!-- 这里的fromto为角度0时的指向 -->
+            <geom type="capsule" fromto="0 0 0 0 0 -1" size="0.045" material="pole" mass=".1" />
+        </default>
+    </default>
+
+    <!--
+      定义了材质和纹理，比如地板的格子纹理、cart（小车）、pole（杆）等的颜色
+    -->
+    <asset>
+        <texture name="grid" type="2d" builtin="checker" rgb1=".1 .2 .3" rgb2=".2 .3 .4" width="300"
+            height="300" />
+        <material name="grid" texture="grid" texrepeat="8 8" reflectance=".2" />
+        <material name="cart" rgba=".7 .1 .1 1" />
+        <material name="pole" rgba=".1 .5 .8 1" />
+        <material name="decoration" rgba=".3 .3 .3 1" />
+    </asset>
+
+    <!-- 场景的主体部分 -->
+    <worldbody>
+        <!-- 设置光源 -->
+        <light name="light" pos="0 0 6" />
+        <!-- 设置摄像机视角 -->
+        <camera name="fixed" pos="0 -4 1" zaxis="0 -1 0" />
+        <camera name="lookatcart" mode="targetbody" target="cart" pos="0 -2 2" />
+        <!-- geom: 定义几何体 -->
+        <geom name="floor" pos="0 0 -.05" size="4 4 .2" type="plane" material="grid" />
+        <geom name="rail1" type="capsule" pos="0 .07 1" zaxis="1 0 0" size="0.02 2"
+            material="decoration"/>
+        <geom name="rail2" type="capsule" pos="0 -.07 1" zaxis="1 0 0" size="0.02 2"
+            material="decoration"/>
+        <!-- 定义一个刚体。只有body可以运动；可以有多个 -->
+        <!-- 一个 <body> 标签内部定义的 <joint>，就是连接“该 Body”与“其父 Body”的纽带。 -->
+        <body name="cart" pos="0 0 1">
+            <!-- type: 滑动关节 -->
+            <joint name="slider" type="slide" limited="true" axis="1 0 0" range="-1.8 1.8"
+                solreflimit=".08 1" damping="5e-4" />
+            <!-- 位置: 都以body原点为开始 所以有穿模 -->
+            <!-- 【重要】这里得定义不碰撞(即使上面已经定义了) 不然会和轨道碰撞影响结果 方法是设置 contype="0" conaffinity="0" -->
+            <geom name="cart" type="box" size="0.2 0.15 0.1" material="cart" mass="1" contype="0" conaffinity="0" />
+            <body name="pole_1" childclass="pole">
+                <joint name="hinge_1" />
+                <geom name="pole_1" />
+            </body>
+        </body>
+    </worldbody>
+
+    <!-- 定义了一个马达（motor），控制小车的滑动关节（slider），gear 表示力矩放大倍数，ctrlrange 控制输入范围 -->
+    <actuator>
+        <motor name="slide" joint="slider" gear="10" ctrllimited="true" ctrlrange="-1 1" />
+    </actuator>
+</mujoco>
