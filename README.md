@@ -34,6 +34,8 @@
 - 加密解密（C++联合编程）
 - 模式识别课程实验（神经网络、隐马尔可夫分词、朴素贝叶斯分类）
 - musicBeat：音乐的节拍分析
+- cartpole_rl_mjlab1.2.0：低版本mjlab强化学习demo
+- seuwlan：东大学生无线网络自动连接脚本
 
 ## 其他
 - HDL_clock：数电实验，用verilog写钟
