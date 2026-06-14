@@ -53,7 +53,7 @@ def login(account: str, password: str, ipv4: str, ipv6: str = "", mac: str = "00
             timeout=10,
             verify=True
         )
-        print(f"login: {response.status_code}")
+        print(f"[login] status code: {response.status_code}")
         # dr1004({"result":"1","msg":"\u8ba4\u8bc1\u6210\u529f"})
         if response.status_code == 200:
             match = re.search(rf'{callback_name}\((.*)\)', response.text)
@@ -62,7 +62,7 @@ def login(account: str, password: str, ipv4: str, ipv6: str = "", mac: str = "00
                 return result
         return None
     except requests.exceptions.RequestException as e:
-        print(f"login 请求失败: {e}")
+        print(f"[login] request failed: {e}")
         return None
 
 #%% 下面的函数在登录后使用
@@ -109,7 +109,7 @@ def find_mac(account: str, ipv4: str) -> str | None:
         })
         """
         
-        print(f"find_mac: {response.status_code}")
+        print(f"[find_mac] status code: {response.status_code}")
 
         if response.status_code == 200:
             match = re.search(rf'{callback_name}\((.*)\)', response.text)
@@ -118,13 +118,15 @@ def find_mac(account: str, ipv4: str) -> str | None:
                 if result.get("result") == "1":
                     online_mac = result.get("list", [{}])[0].get("online_mac")
                     if online_mac:
-                        print(f"find_mac result: {online_mac}")
-                        return online_mac.upper()
-        print("find_mac 请求成功，但获取失败")
+                        upper_mac = online_mac.upper()
+                        print(f"[find_mac] result: {upper_mac}")
+                        return upper_mac
+                else:
+                    print(f"[find_mac] msg: {result.get('msg')}")
         return None
 
     except requests.exceptions.RequestException as e:
-        print(f"find_mac 请求失败: {e}")
+        print(f"[find_mac] request failed: {e}")
         return None
 
 def unbind_mac(mac: str, ipv4: str) -> dict | None:
@@ -155,7 +157,7 @@ def unbind_mac(mac: str, ipv4: str) -> dict | None:
             verify=True
         )
         
-        print(f"unbind_mac: {response.status_code}")
+        print(f"[unbind_mac] status code: {response.status_code}")
 
         # dr1004({"result":"1","msg":"\u89e3\u7ed1Mac\u6210\u529f"})
         if response.status_code == 200:
@@ -167,5 +169,5 @@ def unbind_mac(mac: str, ipv4: str) -> dict | None:
         return None
         
     except requests.exceptions.RequestException as e:
-        print(f"unbind_mac 请求失败: {e}")
+        print(f"[unbind_mac] request failed: {e}")
         return None
