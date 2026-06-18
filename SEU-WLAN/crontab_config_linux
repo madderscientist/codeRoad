@@ -1,0 +1,10 @@
+# 开机延迟1分钟后运行 onboot.py
+@reboot sleep 60 && cd /home/beshar/code/SEU-WLAN && /home/beshar/code/Raspi_Program/.venv/bin/python /home/beshar/code/SEU-WLAN/onboot.py
+
+# 每天凌晨4点运行 daily.py
+0 4 * * * cd /home/beshar/code/SEU-WLAN && /home/beshar/code/Raspi_Program/.venv/bin/python /home/beshar/code/SEU-WLAN/daily.py
+
+# 1. $ crontab -e
+# 2. 粘贴以上
+# 3. CtrlO Enter CtrlX: 保存并退出
+# 4. $ crontab -l 检查

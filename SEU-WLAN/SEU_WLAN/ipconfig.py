@@ -1,3 +1,4 @@
+# windows 下使用
 import subprocess
 import re
 

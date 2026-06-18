@@ -1,6 +1,6 @@
-from . import seuwlan
-from .ipconfig import parse_ipconfig
+import platform
 import re
+from . import seuwlan
 
 def __get_ipv4_address():
     """获取本机IPv4地址"""
@@ -19,9 +19,44 @@ def __get_mac_address():
     注意uuid和校园网获取到的不一样
     """
     import uuid
-    return ''.join(f'{uuid.getnode():012x}'[i:i+2] for i in range(0,12,2)).upper()
+    return f'{uuid.getnode():012x}'.upper()
 
 def get_net_info():
+    system = platform.system()
+    if system == "Windows":
+        v4, mac, v6 = get_net_info_win()
+    elif system == "Linux":
+        v4, mac, v6 = get_net_info_linux()
+    else:
+        raise NotImplementedError("Unsupported operating system")
+
+    if not v4:
+        v4 = __get_ipv4_address()
+    if not mac:
+        mac = __get_mac_address()
+    return v4, mac, v6
+
+def get_net_info_linux():
+    from .ip_a import parse_ip_a
+    ip_a_output = parse_ip_a()
+    ipv4 = None
+    mac = None
+    ipv6 = ""
+    for key, value in ip_a_output.items():
+        if not key.endswith("wlan0"):
+            continue
+        for k, v in value.items():
+            if ipv4 is None and k == "ipv4" and len(v) > 0:
+                ipv4 = v[0].split('/')[0]
+            elif mac is None and k == "mac_address":
+                mac = v.replace(':', '').upper()
+            elif k == "ipv6" and len(v) > 0:
+                ipv6 = v[0].split('/')[0]
+
+    return ipv4, mac, ipv6
+
+def get_net_info_win():
+    from .ipconfig import parse_ipconfig
     ipconfig_output = parse_ipconfig()
     ipv4 = None
     mac = None
@@ -37,10 +72,6 @@ def get_net_info():
                 mac = v.replace('-', '')
             elif k.lower().startswith("ipv6"):
                 ipv6 = re.sub(brace_pattern, "", v)
-    if not ipv4:
-        ipv4 = __get_ipv4_address()
-    if not mac:
-        mac = __get_mac_address()
 
     return ipv4, mac, ipv6
 
