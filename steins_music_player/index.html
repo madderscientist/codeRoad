@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>Steins;Gate Nixie Tube Player</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #000;
+  color: #ff8c00;
+  font-family: 'Courier New', monospace;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* scanline overlay */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(0,0,0,0.12) 2px, rgba(0,0,0,0.12) 4px
+  );
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* ── drag overlay ── */
+#drop-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  pointer-events: none;
+}
+#drop-overlay.active { display: flex; }
+#drop-overlay .drop-text {
+  border: 2px dashed rgba(255,140,0,0.6);
+  border-radius: 20px;
+  padding: 60px 80px;
+  font-size: 22px;
+  color: #ff8c00;
+  letter-spacing: 4px;
+  text-shadow: 0 0 10px #ff6a00;
+}
+
+/* ── hint text ── */
+#hint {
+  position: fixed;
+  bottom: 20px;
+  font-size: 12px;
+  color: rgba(255,140,0,0.25);
+  letter-spacing: 3px;
+}
+
+/* ── nixie container: 55% total width ── */
+#nixie-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 65vw;
+  margin-bottom: 30px;
+}
+
+.nixie-tube {
+  position: relative;
+  flex: 1;
+  aspect-ratio: 0.4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.nixie-tube.dot {
+  flex: 1;
+}
+
+.nixie-digit {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  z-index: 2;
+}
+
+.nixie-ghost {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: 0.035;
+  filter: grayscale(1);
+  z-index: 1;
+}
+
+/* ── FFT canvas: full width ── */
+#fft-canvas {
+  width: 100vw;
+  height: 180px;
+}
+
+/* ── ambient particles ── */
+.particle {
+  position: fixed;
+  width: 2px;
+  height: 2px;
+  background: #ff6a00;
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  animation: float-up 4s ease-in infinite;
+}
+@keyframes float-up {
+  0%   { opacity: 0; transform: translateY(0) scale(1); }
+  20%  { opacity: 0.5; }
+  100% { opacity: 0; transform: translateY(-200px) scale(0); }
+}
+</style>
+</head>
+<body>
+
+<div id="nixie-container">
+  <!-- 8 digits + 1 dot = 9 tubes.  Shows: 0.XXXXXXX (audio energy) -->
+  <div class="nixie-tube" id="tube-0"><img class="nixie-ghost" src="../Steins_WallPaper/NUM/8.bmp"><img class="nixie-digit" id="d-0" src="../Steins_WallPaper/NUM/0.bmp"></div>
+  <div class="nixie-tube dot" id="tube-dot"><img class="nixie-digit" id="d-dot" src="../Steins_WallPaper/NUM/p.bmp"></div>
+  <div class="nixie-tube" id="tube-1"><img class="nixie-ghost" src="../Steins_WallPaper/NUM/8.bmp"><img class="nixie-digit" id="d-1" src="../Steins_WallPaper/NUM/0.bmp"></div>
+  <div class="nixie-tube" id="tube-2"><img class="nixie-ghost" src="../Steins_WallPaper/NUM/8.bmp"><img class="nixie-digit" id="d-2" src="../Steins_WallPaper/NUM/0.bmp"></div>
+  <div class="nixie-tube" id="tube-3"><img class="nixie-ghost" src="../Steins_WallPaper/NUM/8.bmp"><img class="nixie-digit" id="d-3" src="../Steins_WallPaper/NUM/0.bmp"></div>
+  <div class="nixie-tube" id="tube-4"><img class="nixie-ghost" src="../Steins_WallPaper/NUM/8.bmp"><img class="nixie-digit" id="d-4" src="../Steins_WallPaper/NUM/0.bmp"></div>
+  <div class="nixie-tube" id="tube-5"><img class="nixie-ghost" src="../Steins_WallPaper/NUM/8.bmp"><img class="nixie-digit" id="d-5" src="../Steins_WallPaper/NUM/0.bmp"></div>
+  <div class="nixie-tube" id="tube-6"><img class="nixie-ghost" src="../Steins_WallPaper/NUM/8.bmp"><img class="nixie-digit" id="d-6" src="../Steins_WallPaper/NUM/0.bmp"></div>
+  <div class="nixie-tube" id="tube-7"><img class="nixie-ghost" src="../Steins_WallPaper/NUM/8.bmp"><img class="nixie-digit" id="d-7" src="../Steins_WallPaper/NUM/0.bmp"></div>
+</div>
+
+<canvas id="fft-canvas"></canvas>
+
+<input type="file" id="file-input" accept="audio/*" style="display:none">
+
+<script>
+// ══════════════════════════════════════════
+//  Audio Engine
+// ══════════════════════════════════════════
+const audio = new Audio();
+let audioCtx, analyser, source, timeData, freqData;
+let isPlaying = false;
+const TUBE_COUNT = 9; // 8 digits + 1 dot
+const FFT_FREQ_RATIO = 0.6; // visible frequency range (fraction of full FFT spectrum)
+
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  analyser = audioCtx.createAnalyser();
+  analyser.fftSize = 1024;
+  analyser.smoothingTimeConstant = 0.8;
+  source = audioCtx.createMediaElementSource(audio);
+  source.connect(analyser);
+  analyser.connect(audioCtx.destination);
+  timeData = new Uint8Array(analyser.fftSize);
+  freqData = new Uint8Array(analyser.frequencyBinCount);
+}
+
+// ══════════════════════════════════════════
+//  DOM refs
+// ══════════════════════════════════════════
+const digitImgs = [];
+for (let i = 0; i < 8; i++) digitImgs.push(document.getElementById('d-' + i));
+const dotImg = document.getElementById('d-dot');
+
+const canvas = document.getElementById('fft-canvas');
+const ctx = canvas.getContext('2d');
+const dropOverlay = document.getElementById('drop-overlay');
+
+// ══════════════════════════════════════════
+//  Digit helpers
+// ══════════════════════════════════════════
+function setDigit(el, n) {
+  const src = '../Steins_WallPaper/NUM/' + n + '.bmp';
+  if (!el.src.endsWith(src)) el.src = src;
+}
+
+// jump state for 8 digit tubes (index 0-7)
+const jump = Array.from({length: 8}, () => ({ y: 0, vy: 0, glow: 1 }));
+let prevDigits = Array(8).fill(-1);
+let tick = 0;
+
+// ══════════════════════════════════════════
+//  Audio energy → 8 digit values
+//  Band split: bass(2), mid(3), treble(3)
+// ══════════════════════════════════════════
+function getBandEnergy() {
+  if (!freqData || !isPlaying) return [0,0,0,0,0,0,0,0];
+  const N = freqData.length;
+  const maxBin = Math.floor(N * FFT_FREQ_RATIO); // match FFT display range
+  // frequency resolution: sampleRate / fftSize ≈ 44100/1024 ≈ 43 Hz per bin
+  // Distribute 8 bands across the visible frequency range (0 to maxBin)
+  const bands = [
+    [0, Math.floor(maxBin * 0.01)],      // sub-bass
+    [Math.floor(maxBin * 0.01), Math.floor(maxBin * 0.02)],   // bass
+    [Math.floor(maxBin * 0.02), Math.floor(maxBin * 0.06)],   // low-mid
+    [Math.floor(maxBin * 0.06), Math.floor(maxBin * 0.12)],   // mid
+    [Math.floor(maxBin * 0.12), Math.floor(maxBin * 0.22)],   // upper-mid
+    [Math.floor(maxBin * 0.22), Math.floor(maxBin * 0.38)],   // presence
+    [Math.floor(maxBin * 0.38), Math.floor(maxBin * 0.58)],   // brilliance
+    [Math.floor(maxBin * 0.58), maxBin]                       // air
+  ];
+  return bands.map(([lo, hi]) => {
+    let sum = 0;
+    const count = Math.max(1, hi - lo);
+    for (let i = lo; i < hi && i < N; i++) sum += freqData[i];
+    const raw = Math.floor((sum / count / 255) * 10);
+    return (raw * 3) % 10; // ×3 取个位，让数字更活跃
+  });
+}
+
+function getOverallEnergy() {
+  if (!freqData || !isPlaying) return 0;
+  let sum = 0;
+  for (let i = 0; i < freqData.length; i++) sum += freqData[i];
+  return sum / freqData.length / 255;
+}
+
+// ══════════════════════════════════════════
+//  Canvas resize
+// ══════════════════════════════════════════
+function resizeCanvas() {
+  canvas.width = canvas.clientWidth * devicePixelRatio;
+  canvas.height = canvas.clientHeight * devicePixelRatio;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+// ══════════════════════════════════════════
+//  FFT draw (full width)
+// ══════════════════════════════════════════
+function drawFFT() {
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  if (!analyser || !isPlaying) {
+    ctx.strokeStyle = 'rgba(255,100,0,0.15)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, H / 2);
+    ctx.lineTo(W, H / 2);
+    ctx.stroke();
+    return;
+  }
+
+  analyser.getByteFrequencyData(freqData);
+  const barCount = 128;
+  const maxBin = Math.floor(freqData.length * FFT_FREQ_RATIO);
+  const step = Math.floor(maxBin / barCount);
+  const barW = W / barCount;
+  const gap = Math.max(1, 1.5 * devicePixelRatio);
+
+  for (let i = 0; i < barCount; i++) {
+    let sum = 0;
+    for (let j = 0; j < step; j++) sum += freqData[i * step + j];
+    const avg = sum / step;
+    const r = avg / 255;
+    const barH = r * H * 0.92;
+    const x = i * barW + gap / 2;
+
+    const grad = ctx.createLinearGradient(0, H - barH, 0, H);
+    grad.addColorStop(0, `rgba(255,${60 + r * 80 | 0},0,${0.6 + r * 0.4})`);
+    grad.addColorStop(0.6, `rgba(255,120,0,${0.4 + r * 0.3})`);
+    grad.addColorStop(1, `rgba(255,50,0,${0.2 + r * 0.2})`);
+    ctx.fillStyle = grad;
+    ctx.fillRect(x, H - barH, barW - gap, barH);
+
+    // bright cap
+    ctx.fillStyle = `rgba(255,${140 + r * 60 | 0},${r * 40 | 0},${0.8 + r * 0.2})`;
+    ctx.fillRect(x, H - barH, barW - gap, Math.min(3 * devicePixelRatio, barH));
+  }
+
+  // waveform overlay
+  analyser.getByteTimeDomainData(timeData);
+  ctx.strokeStyle = 'rgba(255,140,0,0.25)';
+  ctx.lineWidth = 1.5 * devicePixelRatio;
+  ctx.beginPath();
+  const sw = W / timeData.length;
+  for (let i = 0; i < timeData.length; i++) {
+    const y = (timeData[i] / 128) * H / 2;
+    i === 0 ? ctx.moveTo(0, y) : ctx.lineTo(i * sw, y);
+  }
+  ctx.stroke();
+}
+
+// ══════════════════════════════════════════
+//  Particles
+// ══════════════════════════════════════════
+function spawnParticle() {
+  const p = document.createElement('div');
+  p.className = 'particle';
+  p.style.left = (Math.random() * innerWidth) + 'px';
+  p.style.top = (innerHeight * 0.5 + Math.random() * innerHeight * 0.4) + 'px';
+  p.style.animationDuration = (3 + Math.random() * 3) + 's';
+  p.style.animationDelay = (Math.random() * 2) + 's';
+  document.body.appendChild(p);
+  setTimeout(() => p.remove(), 7000);
+}
+setInterval(spawnParticle, 300);
+
+// ══════════════════════════════════════════
+//  Main loop
+// ══════════════════════════════════════════
+let smoothVol = 0;
+
+function animate() {
+  requestAnimationFrame(animate);
+  tick++;
+
+  // ── get audio data ──
+  if (analyser && isPlaying) {
+    analyser.getByteFrequencyData(freqData);
+    analyser.getByteTimeDomainData(timeData);
+  }
+
+  // ── compute digits ──
+  const digits = getBandEnergy();
+
+  // ── detect changes → trigger jump ──
+  // [JUMP EFFECTS DISABLED]
+  // for (let i = 0; i < 8; i++) {
+  //   if (digits[i] !== prevDigits[i]) {
+  //     jump[i].vy = -(8 + Math.random() * 6);
+  //     // nixie flicker
+  //     const el = digitImgs[i];
+  //     el.style.opacity = '0.15';
+  //     setTimeout(() => { el.style.opacity = '1'; }, 25);
+  //     setTimeout(() => { el.style.opacity = '0.25'; }, 50);
+  //     setTimeout(() => { el.style.opacity = '1'; }, 75);
+  //   }
+  // }
+  prevDigits = [...digits];
+
+  // ── set digit images ──
+  for (let i = 0; i < 8; i++) setDigit(digitImgs[i], digits[i]);
+
+  // ── beat detection ──
+  const vol = getOverallEnergy();
+  // const beatThresh = smoothVol * 1.4 + 0.04;
+  // const isBeat = vol > beatThresh && vol > 0.08;
+  smoothVol += (vol - smoothVol) * 0.05;
+
+  // [BEAT KICK DISABLED]
+  // if (isBeat) {
+  //   for (let i = 0; i < 8; i++) {
+  //     jump[i].vy -= (2 + Math.random() * 3);
+  //   }
+  // }
+
+  // ── apply physics + transform ──
+  // [JUMP / JITTER / ROTATION DISABLED]
+  // for (let i = 0; i < 8; i++) {
+  //   const j = jump[i];
+  //   j.vy += -j.y * 0.25;
+  //   j.vy *= 0.78;
+  //   j.y += j.vy;
+  //   if (isPlaying) {
+  //     const phase = tick * 0.08 + i * 0.9;
+  //     const jitterY = vol * Math.sin(phase) * 3;
+  //     const jitterX = Math.sin(tick * 0.04 + i * 1.3) * vol * 1.5;
+  //     const rot = Math.sin(tick * 0.06 + i * 0.7) * vol * 1.2;
+  //     const sc = 1 + vol * 0.02;
+  //     digitImgs[i].style.transform =
+  //       `translateY(${j.y + jitterY}px) translateX(${jitterX}px) rotate(${rot}deg) scale(${sc})`;
+  //     digitImgs[i].style.filter = `brightness(${0.85 + vol * 0.6 + (isBeat ? 0.25 : 0)})`;
+  //   } else {
+  //     digitImgs[i].style.transform = `translateY(${j.y}px)`;
+  //     digitImgs[i].style.filter = 'brightness(0.65)';
+  //   }
+  // }
+
+  // ── dot pulse ──
+  // [DOT PULSE DISABLED]
+  // if (isPlaying) {
+  //   const pulse = isBeat ? 1 : (0.5 + 0.5 * Math.sin(tick * 0.08));
+  //   dotImg.style.opacity = (0.5 + pulse * 0.5).toString();
+  //   dotImg.style.filter = `brightness(${0.7 + pulse * 0.5})`;
+  // } else {
+  //   dotImg.style.opacity = '0.4';
+  //   dotImg.style.filter = 'brightness(0.5)';
+  // }
+
+  // ── FFT ──
+  drawFFT();
+}
+requestAnimationFrame(animate);
+
+// ══════════════════════════════════════════
+//  Drag & Drop
+// ══════════════════════════════════════════
+let dragCounter = 0;
+
+document.addEventListener('dragenter', (e) => {
+  e.preventDefault();
+  dragCounter++;
+  dropOverlay.classList.add('active');
+});
+
+document.addEventListener('dragleave', (e) => {
+  e.preventDefault();
+  dragCounter--;
+  if (dragCounter <= 0) {
+    dragCounter = 0;
+    dropOverlay.classList.remove('active');
+  }
+});
+
+document.addEventListener('dragover', (e) => {
+  e.preventDefault();
+});
+
+document.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dragCounter = 0;
+  dropOverlay.classList.remove('active');
+
+  const file = e.dataTransfer.files[0];
+  if (!file || !file.type.startsWith('audio/')) return;
+
+  const url = URL.createObjectURL(file);
+  audio.src = url;
+  initAudio();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  audio.play();
+  isPlaying = true;
+});
+
+// ══════════════════════════════════════════
+//  Keyboard
+// ══════════════════════════════════════════
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space') {
+    e.preventDefault();
+    if (!audio.src) return;
+    initAudio();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    if (isPlaying) {
+      audio.pause();
+      isPlaying = false;
+    } else {
+      audio.play();
+      isPlaying = true;
+    }
+  }
+});
+
+audio.addEventListener('ended', () => { isPlaying = false; });
+
+// ══════════════════════════════════════════
+//  Click: left = open file, right = play/pause
+// ══════════════════════════════════════════
+const fileInput = document.getElementById('file-input');
+
+document.addEventListener('click', (e) => {
+  if (e.button !== 0) return; // only left click
+  if (e.target.closest('#drop-overlay')) return;
+  fileInput.click();
+});
+
+document.addEventListener('contextmenu', (e) => {
+  e.preventDefault();
+  if (!audio.src) return;
+  initAudio();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  if (isPlaying) {
+    audio.pause();
+    isPlaying = false;
+  } else {
+    audio.play();
+    isPlaying = true;
+  }
+});
+
+fileInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  audio.src = url;
+  initAudio();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  audio.play();
+  isPlaying = true;
+  fileInput.value = ''; // reset so same file can be re-selected
+});
+</script>
+</body>
+</html>
